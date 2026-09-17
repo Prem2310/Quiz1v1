@@ -224,6 +224,7 @@ def _public_question(question: Question) -> dict[str, Any]:
         "id": question.id,
         "text": question.text,
         "text_html": question.text_html,
+        "directions_html": question.directions_html,
         "options": question.options,
         "options_html": question.options_html,
         "difficulty": question.difficulty,

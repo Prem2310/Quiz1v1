@@ -181,6 +181,7 @@ async def complete_quiz(attempt_id: int, payload: QuizCompleteRequest, current_u
                 question_id=question.id,
                 text=question.text,
                 text_html=question.text_html,
+                directions_html=question.directions_html,
                 options=question.options,
                 options_html=question.options_html,
                 selected_answer=selected,

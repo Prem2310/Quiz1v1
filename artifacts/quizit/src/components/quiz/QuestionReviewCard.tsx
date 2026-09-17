@@ -10,7 +10,14 @@ const OPTION_KEYS: OptionKey[] = ["a", "b", "c", "d"];
 /** IndiaBix-style answer review: the question, every option with the correct one marked
  * (and the user's wrong pick, if any), then the explanation directly underneath. */
 export function QuestionReviewCard({ review, index }: { review: QuestionReview; index: number }) {
-  const question = toUiQuestion({ id: review.question_id, text: review.text, text_html: review.text_html, options: review.options, options_html: review.options_html });
+  const question = toUiQuestion({
+    id: review.question_id,
+    text: review.text,
+    text_html: review.text_html,
+    directions_html: review.directions_html,
+    options: review.options,
+    options_html: review.options_html,
+  });
   const correctKey = resolveCorrectKey(question, review.correct_answer);
   const selectedKey = resolveCorrectKey(question, review.selected_answer);
   const skipped = review.selected_answer == null;
@@ -18,13 +25,18 @@ export function QuestionReviewCard({ review, index }: { review: QuestionReview; 
   return (
     <div className="surface-panel overflow-hidden">
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
-        <div className="flex min-w-0 gap-3">
-          <span className="numeric shrink-0 text-xs font-bold text-muted-foreground">Q{index + 1}</span>
-          {question.textHtml ? (
-            <SafeHtml html={question.textHtml} className="text-sm font-medium text-foreground [&_img]:max-w-full" />
-          ) : (
-            <p className="text-sm font-medium text-foreground">{question.text}</p>
-          )}
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {question.directionsHtml ? (
+            <SafeHtml html={question.directionsHtml} className="rounded-lg border border-border bg-surface/60 p-2.5 text-xs text-muted-foreground [&_img]:max-w-full [&_table]:w-full" />
+          ) : null}
+          <div className="flex min-w-0 gap-3">
+            <span className="numeric shrink-0 text-xs font-bold text-muted-foreground">Q{index + 1}</span>
+            {question.textHtml ? (
+              <SafeHtml html={question.textHtml} className="text-sm font-medium text-foreground [&_img]:max-w-full" />
+            ) : (
+              <p className="text-sm font-medium text-foreground">{question.text}</p>
+            )}
+          </div>
         </div>
         <span
           className={cn(

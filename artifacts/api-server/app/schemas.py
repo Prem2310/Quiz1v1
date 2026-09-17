@@ -84,6 +84,7 @@ class QuestionRead(BaseModel):
     subtopic_id: int
     text: str
     text_html: str | None = None
+    directions_html: str | None = None
     options: Any
     options_html: Any | None = None
     answer_letter: str | None = None
@@ -153,6 +154,7 @@ class QuestionReview(BaseModel):
     question_id: str
     text: str
     text_html: str | None = None
+    directions_html: str | None = None
     options: Any
     options_html: Any | None = None
     selected_answer: str | None

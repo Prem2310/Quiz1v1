@@ -108,6 +108,8 @@ export interface Question {
   text: string;
   /** @nullable */
   text_html?: string | null;
+  /** @nullable */
+  directions_html?: string | null;
   options: unknown;
   options_html?: unknown;
   /** @nullable */
@@ -203,6 +205,8 @@ export interface QuestionReview {
   text: string;
   /** @nullable */
   text_html?: string | null;
+  /** @nullable */
+  directions_html?: string | null;
   options: unknown;
   options_html?: unknown;
   /** @nullable */

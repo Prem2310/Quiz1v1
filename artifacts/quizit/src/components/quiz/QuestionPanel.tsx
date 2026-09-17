@@ -26,6 +26,12 @@ export function QuestionPanel({ question, selected, feedback = {}, disabled, onS
       transition={{ duration: 0.25 }}
       className="w-full"
     >
+      {question.directionsHtml ? (
+        <SafeHtml
+          html={question.directionsHtml}
+          className="mb-4 rounded-lg border border-border bg-surface/60 p-3 text-sm text-muted-foreground [&_img]:max-w-full [&_img]:h-auto [&_table]:w-full"
+        />
+      ) : null}
       {question.textHtml ? (
         <SafeHtml html={question.textHtml} className="text-balance text-lg font-semibold leading-snug text-foreground sm:text-2xl [&_img]:max-w-full [&_img]:h-auto" />
       ) : (

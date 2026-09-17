@@ -730,6 +730,7 @@ components:
         subtopic_id: { type: integer }
         text: { type: string }
         text_html: { type: [string, "null"] }
+        directions_html: { type: [string, "null"] }
         options: {}
         options_html: {}
         answer_letter: { type: [string, "null"] }
@@ -800,6 +801,7 @@ components:
         question_id: { type: string }
         text: { type: string }
         text_html: { type: [string, "null"] }
+        directions_html: { type: [string, "null"] }
         options: {}
         options_html: {}
         selected_answer: { type: [string, "null"] }
