@@ -175,16 +175,28 @@ export default function PracticePage() {
 
   if (phase === "session" && currentQuestion) {
     const progress = questions.length ? ((index + 1) / questions.length) * 100 : 0;
+    const activeTopic = topicsQuery.data?.find((t) => t.id === topicId);
+    const activeSubtopic = subtopicsQuery.data?.find((st) => st.id === subtopicId);
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-2xl flex-col justify-center">
-        <div className="mb-6 flex items-center justify-between">
-          <p className="numeric text-xs font-semibold text-muted-foreground">
-            Question {index + 1} / {questions.length}
-          </p>
-          <CircularTimer secondsLeft={secondsLeft} total={timePerQuestion} />
+        <div className="border border-border bg-surface">
+          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+            <div className="min-w-0">
+              <p className="numeric text-[10px] font-bold text-primary">P1 · SOLO</p>
+              <p className="truncate text-xs font-semibold text-foreground">
+                {activeSubtopic?.name ?? activeTopic?.name ?? "Mixed practice"}
+              </p>
+            </div>
+            <p className="numeric shrink-0 text-xs font-semibold text-muted-foreground">
+              {index + 1} / {questions.length}
+            </p>
+            <CircularTimer secondsLeft={secondsLeft} total={timePerQuestion} size={40} />
+          </div>
+          <Progress value={progress} className="h-1 rounded-none border-0" />
         </div>
-        <Progress value={progress} className="mb-6 h-1" />
-        <QuestionPanel question={currentQuestion} selected={selected} feedback={{}} disabled={locked} onSelect={recordAnswer} />
+        <div className="mt-6">
+          <QuestionPanel question={currentQuestion} selected={selected} feedback={{}} disabled={locked} onSelect={recordAnswer} />
+        </div>
         <p className="mt-6 text-center text-xs text-muted-foreground">Press A · B · C · D to answer</p>
       </div>
     );
@@ -198,8 +210,8 @@ export default function PracticePage() {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel glow-primary p-8 text-center">
-          <p className="label-micro">Session complete</p>
-          <AnimatedNumber value={result.accuracy} suffix="%" decimals={0} className="mt-2 block text-5xl font-bold text-foreground" />
+          <p className="font-display text-2xl uppercase tracking-wide text-foreground">Session complete</p>
+          <AnimatedNumber value={result.accuracy} suffix="%" decimals={0} className="numeric mt-2 block text-5xl font-bold text-primary" />
           <p className="mt-1 text-sm text-muted-foreground">accuracy</p>
           <div className="mt-6 grid grid-cols-3 gap-4">
             <ResultStat label="Correct" value={result.total_correct} tone="text-primary" />
@@ -300,9 +312,9 @@ export default function PracticePage() {
                       setTopicId(active ? null : topic.id);
                       setSubtopicId(null);
                     }}
-                    className={`surface-panel relative flex w-full items-center gap-3 p-4 text-left transition hover:border-primary/50 ${active ? "border-primary bg-primary/5" : ""}`}
+                    className={`relative flex w-full items-center gap-3 border-2 bg-surface p-4 text-left transition ${active ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
                   >
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${active ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"}`}>
+                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center border-2 transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-primary/10 text-primary"}`}>
                       <Icon className="h-4.5 w-4.5" />
                     </div>
                     <div className="min-w-0">
@@ -316,7 +328,7 @@ export default function PracticePage() {
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0, opacity: 0 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground"
+                          className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-[calc(var(--radius)-6px)] bg-primary text-primary-foreground"
                         >
                           <Check className="h-3 w-3" />
                         </motion.div>
@@ -390,7 +402,7 @@ function ModeCard({
       onClick={onClick}
       className={`glass-panel flex w-full items-start gap-3 p-5 text-left transition ${active ? "glow-primary" : "hover:shadow-md"}`}
     >
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${active ? "bg-primary text-primary-foreground" : toneClass}`}>
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] ${active ? "bg-primary text-primary-foreground" : toneClass}`}>
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">

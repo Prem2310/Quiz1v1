@@ -55,9 +55,20 @@ export default function DuelMatchmaking() {
     setPhase("idle");
   }
 
+  const showSlots = phase === "searching" || phase === "matched";
+
   return (
     <div className="mx-auto max-w-lg space-y-6">
-      <PageHeader eyebrow="Duel" title="Find an opponent" description="Get matched with someone near your rating." />
+      <PageHeader title="Find an opponent" description="Get matched with someone near your rating." />
+
+      {showSlots ? (
+        <VersusSlots
+          youName={user?.name ?? "You"}
+          opponentName={match?.opponent?.name ?? null}
+          opponentRating={match?.opponent?.rating ?? null}
+          searching={phase === "searching"}
+        />
+      ) : null}
 
       {phase === "idle" || phase === "error" ? (
         <Reveal className="glass-panel space-y-5 p-6">
@@ -91,19 +102,10 @@ export default function DuelMatchmaking() {
       ) : null}
 
       {phase === "searching" ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass-panel flex flex-col items-center gap-5 p-10 text-center"
-        >
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-            <div className="pulse-ring absolute inset-0 rounded-full" />
-            <span className="text-lg font-bold text-primary">{user ? initialsOf(user.name) : "?"}</span>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-foreground">Searching for an opponent…</p>
-            <p className="mt-1 text-xs text-muted-foreground">{connection === "OPEN" ? "Connected — widening search…" : "Connecting…"}</p>
-          </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-4 text-center">
+          <p className="numeric text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {connection === "OPEN" ? "Connected · widening search…" : "Connecting…"}
+          </p>
           <Button variant="outline" onClick={cancel}>
             <X className="h-4 w-4" /> Cancel
           </Button>
@@ -111,14 +113,55 @@ export default function DuelMatchmaking() {
       ) : null}
 
       {phase === "matched" && match ? (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel glow-primary flex flex-col items-center gap-3 p-10 text-center">
-          <Swords className="h-8 w-8 text-primary" />
-          <p className="text-lg font-bold text-foreground">Opponent found!</p>
-          <p className="text-sm text-muted-foreground">
-            {match.opponent?.name ?? "Opponent"} · {Math.round(match.opponent?.rating ?? 0)} rating
-          </p>
-        </motion.div>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-display text-center text-xl uppercase tracking-wide text-primary">
+          Match found — entering the arena…
+        </motion.p>
       ) : null}
     </div>
+  );
+}
+
+/** The versus-screen signature moment: a P1 slot (you, always filled) facing a P2
+ * slot that pulses empty while searching and locks in the real opponent the instant
+ * matchmaking resolves — the same two-corner framing the duel room itself uses. */
+function VersusSlots({
+  youName,
+  opponentName,
+  opponentRating,
+  searching,
+}: {
+  youName: string;
+  opponentName: string | null;
+  opponentRating: number | null;
+  searching: boolean;
+}) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-3">
+      <div className="flex-1 border-2 border-primary bg-surface p-5 text-center">
+        <p className="numeric text-xs font-bold text-primary">P1</p>
+        <div className="mx-auto mt-3 flex h-14 w-14 items-center justify-center rounded-[calc(var(--radius)-4px)] border-2 border-primary bg-card text-lg font-bold text-primary">
+          {initialsOf(youName)}
+        </div>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">{youName}</p>
+      </div>
+
+      <p className="font-display shrink-0 text-2xl text-muted-foreground">VS</p>
+
+      <div className={`relative flex-1 border-2 bg-surface p-5 text-center ${opponentName ? "border-secondary" : "border-dashed border-border"}`}>
+        {searching ? <div className="pulse-ring absolute inset-0" /> : null}
+        <p className={`numeric text-xs font-bold ${opponentName ? "text-secondary" : "text-muted-foreground"}`}>P2</p>
+        <div
+          className={`mx-auto mt-3 flex h-14 w-14 items-center justify-center rounded-[calc(var(--radius)-4px)] border-2 text-lg font-bold ${
+            opponentName ? "border-secondary bg-card text-secondary" : "border-dashed border-border text-muted-foreground"
+          }`}
+        >
+          {opponentName ? initialsOf(opponentName) : "?"}
+        </div>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">
+          {opponentName ?? "Searching…"}
+        </p>
+        {opponentRating != null ? <p className="numeric mt-0.5 text-xs text-muted-foreground">{Math.round(opponentRating)} rating</p> : null}
+      </div>
+    </motion.div>
   );
 }

@@ -27,7 +27,7 @@ export function QuestionReviewCard({ review, index }: { review: QuestionReview; 
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           {question.directionsHtml ? (
-            <SafeHtml html={question.directionsHtml} className="rounded-lg border border-border bg-surface/60 p-2.5 text-xs text-muted-foreground [&_img]:max-w-full [&_table]:w-full" />
+            <SafeHtml html={question.directionsHtml} className="rounded-[var(--radius)] border border-border bg-surface/60 p-2.5 text-xs text-muted-foreground [&_img]:max-w-full [&_table]:w-full" />
           ) : null}
           <div className="flex min-w-0 gap-3">
             <span className="numeric shrink-0 text-xs font-bold text-muted-foreground">Q{index + 1}</span>
@@ -40,7 +40,7 @@ export function QuestionReviewCard({ review, index }: { review: QuestionReview; 
         </div>
         <span
           className={cn(
-            "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
+            "shrink-0 rounded-[calc(var(--radius)-4px)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
             skipped ? "bg-muted text-muted-foreground" : review.is_correct ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive",
           )}
         >
@@ -56,13 +56,13 @@ export function QuestionReviewCard({ review, index }: { review: QuestionReview; 
             <div
               key={key}
               className={cn(
-                "flex items-center gap-3 rounded-lg border px-3 py-2 text-sm",
+                "flex items-center gap-3 rounded-[var(--radius)] border px-3 py-2 text-sm",
                 isCorrect && "border-primary/50 bg-primary/10 text-foreground",
                 isWrongPick && "border-destructive/50 bg-destructive/10 text-foreground",
                 !isCorrect && !isWrongPick && "border-border text-muted-foreground",
               )}
             >
-              <span className="numeric flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-[10px] font-bold uppercase">
+              <span className="numeric flex h-5 w-5 shrink-0 items-center justify-center rounded-[calc(var(--radius)-6px)] border border-current text-[10px] font-bold uppercase">
                 {key}
               </span>
               {question.optionsHtml?.[key] ? (

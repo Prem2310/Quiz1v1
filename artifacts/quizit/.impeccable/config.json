@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "hsl(220 20% 12% / 0.9)",
+        "files": [
+          "src/index.css"
+        ],
+        "createdAt": "2026-09-17T18:42:54.938Z",
+        "reason": "neutral CRT-black family body-background variant, same hue as documented --background/--surface tokens"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "4px",
+        "files": [
+          "src/index.css"
+        ],
+        "createdAt": "2026-09-17T18:42:55.620Z",
+        "reason": "false positive: literal is inside calc(var(--radius) - 4px), the same token-relative pattern already used in avatar.tsx/button.tsx"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "11px",
+        "files": [
+          "src/pages/DuelRoom.tsx"
+        ],
+        "createdAt": "2026-09-17T18:49:29.604Z",
+        "reason": "pre-existing micro-label size (question counter), same scale as the documented label-micro token"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#88c999",
+        "files": [
+          "src/index.css"
+        ],
+        "createdAt": "2026-09-17T18:57:26.647Z",
+        "reason": "ported verbatim from IndiaBix's own dark-theme CSS (body.darkTheme i.ga-var) for algebra variable letters, not an invented brand color"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "11px",
+        "files": [
+          "src/pages/PracticePage.tsx"
+        ],
+        "createdAt": "2026-09-17T19:05:25.413Z",
+        "reason": "pre-existing FilterChip micro-label, same scale as documented label-micro token"
+      }
+    ]
+  }
+}
