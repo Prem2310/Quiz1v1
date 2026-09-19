@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export default function NotFound() {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-background px-4 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-card text-primary">
+      <div className="flex h-14 w-14 items-center justify-center rounded-[var(--radius)] border border-border bg-card text-primary">
         <Compass className="h-6 w-6" />
       </div>
       <h1 className="font-display text-3xl font-bold text-foreground">Lost the plot</h1>

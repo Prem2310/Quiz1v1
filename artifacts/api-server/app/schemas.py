@@ -84,6 +84,7 @@ class QuestionRead(BaseModel):
     subtopic_id: int
     text: str
     text_html: str | None = None
+    directions_html: str | None = None
     options: Any
     options_html: Any | None = None
     answer_letter: str | None = None
@@ -153,6 +154,7 @@ class QuestionReview(BaseModel):
     question_id: str
     text: str
     text_html: str | None = None
+    directions_html: str | None = None
     options: Any
     options_html: Any | None = None
     selected_answer: str | None
@@ -206,6 +208,18 @@ class TopicInsight(BaseModel):
     total_answered: int
     correct: int
     accuracy: float
+
+
+class SubtopicWeakness(BaseModel):
+    subtopic_id: int
+    subtopic_name: str
+    topic_id: int
+    topic_name: str
+    attempted: int
+    accuracy: float
+    weakness: float
+    unresolved: int
+    due_for_review: int
 
 
 LeaderboardScope = Literal["global", "college", "friends"]
@@ -303,3 +317,20 @@ class FriendRequestRead(BaseModel):
     requester: DuelOpponent
     addressee: DuelOpponent
     created_at: datetime
+
+
+
+class HeadToHeadResult(BaseModel):
+    duel_id: int
+    result: Literal["win", "loss", "draw"]
+    rating_change: float
+    completed_at: datetime | None = None
+
+
+class HeadToHead(BaseModel):
+    opponent_id: int
+    played: int
+    wins: int
+    losses: int
+    draws: int
+    recent: list[HeadToHeadResult] = Field(default_factory=list)

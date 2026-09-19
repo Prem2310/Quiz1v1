@@ -20,12 +20,29 @@ from app.models import Question, Subtopic, Topic  # noqa: E402
 TOPICS = [
     ("Aptitude", "aptitude"),
     ("Verbal Ability", "verbal-ability"),
+    ("Data Interpretation", "data-interpretation"),
 ]
 
 SUBTOPICS = {
     "aptitude": [("Percentage", "percentage"), ("Time and Work", "time-and-work")],
     "verbal-ability": [("Synonyms", "synonyms")],
+    "data-interpretation": [("Table Charts", "table-charts")],
 }
+
+# Two questions sharing one IndiaBix-style "Directions to Solve" table — exercises
+# question.directions_html end to end (practice, duel, and the review screen).
+TABLE_CHART_DIRECTIONS_HTML = (
+    '<p>Study the following table and answer the questions based on it.</p>'
+    '<table><tbody>'
+    '<tr><td>Year</td><td>Salary</td><td>Bonus</td></tr>'
+    '<tr><td>1998</td><td>288</td><td>3.00</td></tr>'
+    '<tr><td>1999</td><td>342</td><td>2.52</td></tr>'
+    '</tbody></table>'
+)
+TABLE_CHART_QUESTIONS = [
+    ("table-charts", "What was the salary in 1998?", ["288", "342", "3.00", "2.52"], "A"),
+    ("table-charts", "What was the bonus in 1999?", ["288", "342", "3.00", "2.52"], "D"),
+]
 
 QUESTIONS = [
     ("percentage", "If 20% of a number is 50, what is the number?", ["200", "250", "300", "100"], "A"),
@@ -81,9 +98,24 @@ async def run() -> None:
                     difficulty="easy",
                 )
             )
+        for index, (subtopic_slug, text, options, answer_letter) in enumerate(TABLE_CHART_QUESTIONS):
+            db.add(
+                Question(
+                    id=f"dev_{subtopic_slug}_{index}",
+                    subtopic_id=subtopic_by_slug[subtopic_slug].id,
+                    text=text,
+                    directions_html=TABLE_CHART_DIRECTIONS_HTML,
+                    options=options,
+                    answer=options[LETTERS.index(answer_letter)],
+                    answer_letter=answer_letter,
+                    explanation=f"The correct answer is {options[LETTERS.index(answer_letter)]}.",
+                    difficulty="easy",
+                )
+            )
         await db.commit()
 
-    print(f"Seeded {len(TOPICS)} topics, {sum(len(v) for v in SUBTOPICS.values())} subtopics, {len(QUESTIONS)} questions.")
+    total_questions = len(QUESTIONS) + len(TABLE_CHART_QUESTIONS)
+    print(f"Seeded {len(TOPICS)} topics, {sum(len(v) for v in SUBTOPICS.values())} subtopics, {total_questions} questions.")
 
 
 if __name__ == "__main__":

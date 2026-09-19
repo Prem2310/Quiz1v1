@@ -12,6 +12,8 @@ export interface Question {
   text: string;
   /** @nullable */
   text_html?: string | null;
+  /** @nullable */
+  directions_html?: string | null;
   options: unknown;
   options_html?: unknown;
   /** @nullable */

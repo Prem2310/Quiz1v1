@@ -76,6 +76,10 @@ class Question(Base):
     subtopic_id: Mapped[int] = mapped_column(ForeignKey("subtopic.id"), index=True)
     text: Mapped[str] = mapped_column(Text)
     text_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # IndiaBix's "Directions to Solve" context (passage/table/chart) is shared by a group of
+    # questions, but stored per-question (denormalized) so a quiz or duel can freely mix
+    # questions from different subtopics without needing to also carry a grouping key.
+    directions_html: Mapped[str | None] = mapped_column(Text, nullable=True)
     options: Mapped[Any] = mapped_column(JsonType)
     options_html: Mapped[Any | None] = mapped_column(JsonType, nullable=True)
     answer: Mapped[str | None] = mapped_column(Text, nullable=True)

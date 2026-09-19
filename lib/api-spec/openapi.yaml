@@ -340,6 +340,30 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ProgressTrendPoint"
+  /analytics/me/weakness:
+    get:
+      operationId: getMyWeakness
+      tags: [analytics]
+      summary: Subtopics the user is demonstrably weak in, strongest evidence first
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        "200":
+          description: Weak subtopics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubtopicWeakness"
   /analytics/leaderboard:
     get:
       operationId: getLeaderboard
@@ -370,6 +394,26 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/LeaderboardEntry"
+  /duels/head-to-head/{opponent_id}:
+    get:
+      operationId: getHeadToHead
+      tags: [duels]
+      summary: The signed-in user's duel record against one opponent
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: opponent_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Head-to-head record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeadToHead"
   /duels/{duel_id}:
     get:
       operationId: getDuel
@@ -730,6 +774,7 @@ components:
         subtopic_id: { type: integer }
         text: { type: string }
         text_html: { type: [string, "null"] }
+        directions_html: { type: [string, "null"] }
         options: {}
         options_html: {}
         answer_letter: { type: [string, "null"] }
@@ -800,6 +845,7 @@ components:
         question_id: { type: string }
         text: { type: string }
         text_html: { type: [string, "null"] }
+        directions_html: { type: [string, "null"] }
         options: {}
         options_html: {}
         selected_answer: { type: [string, "null"] }
@@ -864,6 +910,19 @@ components:
         total_answered: { type: integer }
         correct: { type: integer }
         accuracy: { type: number }
+    SubtopicWeakness:
+      type: object
+      required: [subtopic_id, subtopic_name, topic_id, topic_name, attempted, accuracy, weakness, unresolved, due_for_review]
+      properties:
+        subtopic_id: { type: integer }
+        subtopic_name: { type: string }
+        topic_id: { type: integer }
+        topic_name: { type: string }
+        attempted: { type: integer }
+        accuracy: { type: number, description: "Smoothed accuracy, 0-100" }
+        weakness: { type: number, description: "0 (solid) to 1 (weak)" }
+        unresolved: { type: integer, description: "Questions whose latest answer was wrong" }
+        due_for_review: { type: integer }
     ProgressTrendPoint:
       type: object
       required: [date, attempts, correct, incorrect, accuracy]
@@ -921,6 +980,27 @@ components:
         player2_rating_after: { type: [number, "null"] }
         started_at: { type: [string, "null"], format: date-time }
         completed_at: { type: [string, "null"], format: date-time }
+    HeadToHeadResult:
+      type: object
+      required: [duel_id, result, rating_change]
+      properties:
+        duel_id: { type: integer }
+        result: { type: string, enum: [win, loss, draw] }
+        rating_change: { type: number }
+        completed_at: { type: [string, "null"], format: date-time }
+    HeadToHead:
+      type: object
+      required: [opponent_id, played, wins, losses, draws, recent]
+      properties:
+        opponent_id: { type: integer }
+        played: { type: integer }
+        wins: { type: integer }
+        losses: { type: integer }
+        draws: { type: integer }
+        recent:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeadToHeadResult"
     DuelChallengeCreate:
       type: object
       required: [opponent_id]

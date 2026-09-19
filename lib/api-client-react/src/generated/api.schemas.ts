@@ -108,6 +108,8 @@ export interface Question {
   text: string;
   /** @nullable */
   text_html?: string | null;
+  /** @nullable */
+  directions_html?: string | null;
   options: unknown;
   options_html?: unknown;
   /** @nullable */
@@ -203,6 +205,8 @@ export interface QuestionReview {
   text: string;
   /** @nullable */
   text_html?: string | null;
+  /** @nullable */
+  directions_html?: string | null;
   options: unknown;
   options_html?: unknown;
   /** @nullable */
@@ -265,6 +269,21 @@ export interface TopicInsight {
   accuracy: number;
 }
 
+export interface SubtopicWeakness {
+  subtopic_id: number;
+  subtopic_name: string;
+  topic_id: number;
+  topic_name: string;
+  attempted: number;
+  /** Smoothed accuracy, 0-100 */
+  accuracy: number;
+  /** 0 (solid) to 1 (weak) */
+  weakness: number;
+  /** Questions whose latest answer was wrong */
+  unresolved: number;
+  due_for_review: number;
+}
+
 export interface ProgressTrendPoint {
   date: string;
   attempts: number;
@@ -318,6 +337,32 @@ export interface DuelSummary {
   started_at?: string | null;
   /** @nullable */
   completed_at?: string | null;
+}
+
+export type HeadToHeadResultResult = typeof HeadToHeadResultResult[keyof typeof HeadToHeadResultResult];
+
+
+export const HeadToHeadResultResult = {
+  win: 'win',
+  loss: 'loss',
+  draw: 'draw',
+} as const;
+
+export interface HeadToHeadResult {
+  duel_id: number;
+  result: HeadToHeadResultResult;
+  rating_change: number;
+  /** @nullable */
+  completed_at?: string | null;
+}
+
+export interface HeadToHead {
+  opponent_id: number;
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  recent: HeadToHeadResult[];
 }
 
 export interface DuelChallengeCreate {
@@ -454,6 +499,14 @@ export type GetMyProgressTrendParams = {
  * @maximum 180
  */
 days?: number;
+};
+
+export type GetMyWeaknessParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
 };
 
 export type GetLeaderboardParams = {

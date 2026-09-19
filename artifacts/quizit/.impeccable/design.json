@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-18T00:00:00Z",
+  "title": "Design System: QuizIt",
+  "extensions": {
+    "colorMeta": {
+      "p1-cyan": { "role": "primary", "displayName": "P1 Cyan", "canonical": "hsl(198 90% 58%)", "tonalRamp": ["hsl(198 90% 15%)", "hsl(198 90% 25%)", "hsl(198 90% 35%)", "hsl(198 90% 45%)", "hsl(198 90% 58%)", "hsl(198 92% 68%)", "hsl(198 94% 80%)", "hsl(198 96% 92%)"] },
+      "p2-coral": { "role": "secondary", "displayName": "P2 Coral", "canonical": "hsl(8 88% 60%)", "tonalRamp": ["hsl(8 88% 18%)", "hsl(8 88% 28%)", "hsl(8 88% 38%)", "hsl(8 88% 48%)", "hsl(8 88% 60%)", "hsl(8 90% 70%)", "hsl(8 92% 82%)", "hsl(8 94% 92%)"] },
+      "xp-violet": { "role": "tertiary", "displayName": "XP Violet", "canonical": "hsl(271 70% 65%)", "tonalRamp": ["hsl(271 70% 20%)", "hsl(271 70% 30%)", "hsl(271 70% 40%)", "hsl(271 70% 50%)", "hsl(271 70% 65%)", "hsl(271 72% 75%)", "hsl(271 74% 85%)", "hsl(271 76% 94%)"] },
+      "crt-black": { "role": "neutral", "displayName": "CRT Black", "canonical": "hsl(220 14% 6%)", "tonalRamp": ["hsl(220 14% 4%)", "hsl(220 14% 7%)", "hsl(220 14% 10%)", "hsl(220 12% 20%)", "hsl(220 10% 35%)", "hsl(220 8% 55%)", "hsl(220 6% 75%)", "hsl(0 0% 97%)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Arcade Marquee", "purpose": "Page headlines, duel result screens. Anton only." },
+      "body": { "displayName": "Hazard Stencil Body", "purpose": "Body copy, question text. Barlow Condensed." },
+      "label": { "displayName": "HUD Label", "purpose": "Nav, buttons, HUD sub-labels. Uppercase, wide tracking." },
+      "numeric": { "displayName": "Scoreboard Mono", "purpose": "Every score/timer/rating/rank. Tabular figures." }
+    },
+    "shadows": [
+      { "name": "glow-primary", "value": "0 0 0 1.5px hsl(198 90% 58%), 0 0 24px -4px hsl(198 90% 58% / 0.6)", "purpose": "Selection/hover glow on primary elements only, never at rest." },
+      { "name": "glow-secondary", "value": "0 0 0 1.5px hsl(8 88% 60%), 0 0 24px -4px hsl(8 88% 60% / 0.6)", "purpose": "Selection/hover glow on P2/secondary elements." },
+      { "name": "glass-panel", "value": "inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 4px 16px -4px hsl(0 0% 0% / 0.5)", "purpose": "Recessed CRT-screen panel for result/moment screens." }
+    ],
+    "motion": [
+      { "name": "reveal", "value": "opacity/translateY, 0.4s ease-out", "purpose": "Section entrance, staggered via framer-motion StaggerGroup." },
+      { "name": "nav-scale", "value": "spring stiffness 400 damping 20", "purpose": "Mobile bottom-nav active icon scale." }
+    ],
+    "breakpoints": [
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "P1-cyan filled action button, uppercase bold label.",
+      "html": "<button class=\"ds-btn-primary\">QUEUE UP</button>",
+      "css": ".ds-btn-primary { background: hsl(198 90% 58%); color: hsl(220 20% 6%); border: 1px solid hsl(198 90% 68%); border-radius: 5px; padding: 10px 16px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; transition: box-shadow 0.15s, transform 0.1s; } .ds-btn-primary:hover { box-shadow: 0 0 0 1.5px hsl(198 90% 58%), 0 0 24px -4px hsl(198 90% 58% / 0.6); } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Mode Select Tile",
+      "kind": "card",
+      "refersTo": "mode-tile",
+      "description": "Signature component: a fighter-select tile with a corner-color border and P1/P2 label, used on Arena for Find Duel / Practice.",
+      "html": "<div class=\"ds-mode-tile\"><span class=\"ds-mode-tile-corner\">P1</span><div class=\"ds-mode-tile-icon\">⚔</div><h3 class=\"ds-mode-tile-title\">FIND A DUEL</h3><p class=\"ds-mode-tile-body\">Get matched with someone at your rating.</p></div>",
+      "css": ".ds-mode-tile { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 224px; padding: 24px; background: hsl(220 14% 10%); border: 2px solid hsl(198 90% 58%); } .ds-mode-tile-corner { position: absolute; top: 16px; right: 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: hsl(198 90% 58%); } .ds-mode-tile-icon { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border: 2px solid hsl(198 90% 58%); color: hsl(198 90% 58%); } .ds-mode-tile-title { margin-top: 16px; font-family: 'Anton', sans-serif; font-size: 24px; text-transform: uppercase; color: hsl(0 0% 97%); } .ds-mode-tile-body { margin-top: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; color: hsl(220 6% 63%); }"
+    },
+    {
+      "name": "HUD Chip Strip",
+      "kind": "custom",
+      "refersTo": "hud-strip",
+      "description": "Signature component: a divided instrument-panel strip of rating/streak/XP/accuracy, replacing a repeated stat-card grid.",
+      "html": "<div class=\"ds-hud-strip\"><div class=\"ds-hud-chip\">🏆 1000 <span>BRONZE</span></div><div class=\"ds-hud-chip\">🔥 0 <span>STREAK</span></div></div>",
+      "css": ".ds-hud-strip { display: flex; border: 1px solid hsl(220 10% 20%); font-family: 'JetBrains Mono', monospace; } .ds-hud-chip { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: hsl(220 14% 10%); border-right: 1px solid hsl(220 10% 20%); font-weight: 700; color: hsl(198 90% 58%); } .ds-hud-chip span { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: hsl(220 6% 63%); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Versus-Screen",
+    "overview": "QuizIt redesigns around a single refusal: this is not a dashboard with quiz features bolted onto cards. It is staged as a match. Every surface reads as a character-select or versus screen from 90s arcade fighting games: two opposing corners, a HUD strip of hard numbers, a select-grid of modes, and a clock that means something. Two combat colors carry the surface at Committed strength: P1 electric cyan for the player's own corner and primary actions, P2 hot coral for the opponent's corner, destructive states, and urgency. They never blend into a gradient.",
+    "keyCharacteristics": [
+      "Two-corner color opposition (P1 cyan vs. P2 coral), never mixed",
+      "Hard-edged cabinet panels — small radius, high-contrast borders, no blur/glass",
+      "Condensed arcade-marquee display type; tabular monospace for every number",
+      "State changes never rely on color alone",
+      "Numeric deltas render inline, always visible"
+    ],
+    "rules": [
+      { "name": "The Two-Corner Rule", "body": "Primary and secondary never appear together as a gradient or blend. If a screen needs both, they sit in physically opposed positions.", "section": "colors" },
+      { "name": "The Timer Rule", "body": "Amber is reserved for timer/urgency countdowns only. It never brands a resting element.", "section": "colors" },
+      { "name": "The No Kicker Rule", "body": "No eyebrow/kicker label above a heading, anywhere. The heading carries its own weight.", "section": "typography" },
+      { "name": "The Rest-State Rule", "body": "No element glows or elevates at rest. Glow is earned by hover, focus, or selection.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do pair every state change with a label, icon, or motion — never color alone.",
+      "Do show numeric deltas inline next to the value they changed, always visible.",
+      "Do keep P1 (cyan) and P2 (coral) physically separated.",
+      "Do set every score, timer, rating, and rank in the numeric/monospace face with tabular figures."
+    ],
+    "donts": [
+      "Don't use an eyebrow/kicker label above a page heading.",
+      "Don't use gradient text or a gradient fill on any word or number.",
+      "Don't use blur/glass as decoration.",
+      "Don't default to rounded-xl/rounded-2xl panel corners.",
+      "Don't ship a same-size icon+heading+text card grid as page structure when the content has real hierarchy."
+    ]
+  }
+}

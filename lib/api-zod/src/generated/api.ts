@@ -220,6 +220,7 @@ export const ListQuestionsResponseItem = zod.object({
   "subtopic_id": zod.int(),
   "text": zod.string(),
   "text_html": zod.string().nullish(),
+  "directions_html": zod.string().nullish(),
   "options": zod.unknown(),
   "options_html": zod.unknown().optional(),
   "answer_letter": zod.string().nullish(),
@@ -242,6 +243,7 @@ export const GetQuestionResponse = zod.object({
   "subtopic_id": zod.int(),
   "text": zod.string(),
   "text_html": zod.string().nullish(),
+  "directions_html": zod.string().nullish(),
   "options": zod.unknown(),
   "options_html": zod.unknown().optional(),
   "answer_letter": zod.string().nullish(),
@@ -306,6 +308,7 @@ export const StartQuizResponse = zod.object({
   "subtopic_id": zod.int(),
   "text": zod.string(),
   "text_html": zod.string().nullish(),
+  "directions_html": zod.string().nullish(),
   "options": zod.unknown(),
   "options_html": zod.unknown().optional(),
   "answer_letter": zod.string().nullish(),
@@ -352,6 +355,7 @@ export const CompleteQuizResponse = zod.object({
   "question_id": zod.string(),
   "text": zod.string(),
   "text_html": zod.string().nullish(),
+  "directions_html": zod.string().nullish(),
   "options": zod.unknown(),
   "options_html": zod.unknown().optional(),
   "selected_answer": zod.string().nullable(),
@@ -455,6 +459,32 @@ export const GetMyProgressTrendResponse = zod.array(GetMyProgressTrendResponseIt
 
 
 /**
+ * @summary Subtopics the user is demonstrably weak in, strongest evidence first
+ */
+export const getMyWeaknessQueryLimitDefault = 10;
+export const getMyWeaknessQueryLimitMax = 100;
+
+
+
+export const GetMyWeaknessQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(getMyWeaknessQueryLimitMax).default(getMyWeaknessQueryLimitDefault)
+})
+
+export const GetMyWeaknessResponseItem = zod.object({
+  "subtopic_id": zod.int(),
+  "subtopic_name": zod.string(),
+  "topic_id": zod.int(),
+  "topic_name": zod.string(),
+  "attempted": zod.int(),
+  "accuracy": zod.number().describe('Smoothed accuracy, 0-100'),
+  "weakness": zod.number().describe('0 (solid) to 1 (weak)'),
+  "unresolved": zod.int().describe('Questions whose latest answer was wrong'),
+  "due_for_review": zod.int()
+})
+export const GetMyWeaknessResponse = zod.array(GetMyWeaknessResponseItem)
+
+
+/**
  * @summary Get the leaderboard (global, the signed-in user's college, or friends)
  */
 export const getLeaderboardQueryScopeDefault = `global`;
@@ -482,6 +512,28 @@ export const GetLeaderboardResponseItem = zod.object({
   "is_me": zod.boolean().default(getLeaderboardResponseIsMeDefault)
 })
 export const GetLeaderboardResponse = zod.array(GetLeaderboardResponseItem)
+
+
+/**
+ * @summary The signed-in user's duel record against one opponent
+ */
+export const GetHeadToHeadParams = zod.object({
+  "opponent_id": zod.coerce.number().int()
+})
+
+export const GetHeadToHeadResponse = zod.object({
+  "opponent_id": zod.int(),
+  "played": zod.int(),
+  "wins": zod.int(),
+  "losses": zod.int(),
+  "draws": zod.int(),
+  "recent": zod.array(zod.object({
+  "duel_id": zod.int(),
+  "result": zod.enum(['win', 'loss', 'draw']),
+  "rating_change": zod.number(),
+  "completed_at": zod.coerce.date().nullish()
+}))
+})
 
 
 /**

@@ -79,85 +79,86 @@
 }
 
 /*
- * QuizIt runs as a single dark, glass, neon theme (matiks-style) — the same
- * palette is used whether or not the `.dark` class is present, so the app
- * always renders in its intended look.
+ * QuizIt runs as an arcade versus-screen: two combat colors (P1 cyan, P2
+ * coral) oppose on a near-black CRT ground, never blended. Hard-edged
+ * cabinet panels, not glass. Same palette whether or not `.dark` is present.
  */
 :root,
 .dark {
-  --button-outline: rgba(255, 255, 255, 0.1);
-  --badge-outline: rgba(255, 255, 255, 0.05);
+  --button-outline: rgba(255, 255, 255, 0.12);
+  --badge-outline: rgba(255, 255, 255, 0.06);
 
-  --opaque-button-border-intensity: 9;
+  --opaque-button-border-intensity: 11;
 
-  --elevate-1: rgba(255, 255, 255, 0.045);
-  --elevate-2: rgba(255, 255, 255, 0.09);
+  --elevate-1: rgba(255, 255, 255, 0.05);
+  --elevate-2: rgba(255, 255, 255, 0.1);
 
-  --background: 0 0% 5%;
-  --foreground: 0 0% 96%;
+  --background: 220 14% 6%;
+  --foreground: 0 0% 97%;
 
-  --border: 0 0% 17%;
+  --border: 220 10% 20%;
 
-  --card: 0 0% 8.5%;
-  --card-foreground: 0 0% 96%;
-  --card-border: 0 0% 17%;
+  --card: 220 14% 9%;
+  --card-foreground: 0 0% 97%;
+  --card-border: 220 10% 20%;
 
-  --surface: 0 0% 10%;
-  --surface-2: 0 0% 7%;
+  --surface: 220 14% 10%;
+  --surface-2: 220 15% 7%;
 
-  --sidebar: 0 0% 7%;
+  --sidebar: 220 15% 7%;
   --sidebar-foreground: 0 0% 92%;
-  --sidebar-border: 0 0% 15%;
-  --sidebar-primary: 84 81% 56%;
-  --sidebar-primary-foreground: 0 0% 8%;
-  --sidebar-accent: 0 0% 13%;
+  --sidebar-border: 220 10% 17%;
+  --sidebar-primary: 198 90% 58%;
+  --sidebar-primary-foreground: 220 20% 6%;
+  --sidebar-accent: 220 10% 14%;
   --sidebar-accent-foreground: 0 0% 96%;
-  --sidebar-ring: 84 81% 56%;
+  --sidebar-ring: 198 90% 58%;
 
-  --popover: 0 0% 9%;
-  --popover-foreground: 0 0% 96%;
-  --popover-border: 0 0% 17%;
+  --popover: 220 15% 8%;
+  --popover-foreground: 0 0% 97%;
+  --popover-border: 220 10% 20%;
 
-  /* Signature neon-lime primary, matiks-style. */
-  --primary: 84 81% 56%;
-  --primary-foreground: 0 0% 9%;
-  --primary-bright: 84 90% 66%;
-  --primary-muted: 84 35% 32%;
+  /* P1 corner — electric cyan-blue. Carries the primary action/identity weight. */
+  --primary: 198 90% 58%;
+  --primary-foreground: 220 20% 6%;
+  --primary-bright: 198 95% 68%;
+  --primary-muted: 198 40% 30%;
 
-  /* Electric cyan secondary accent (opponents, victory gradient, info). */
-  --secondary: 178 78% 50%;
-  --secondary-foreground: 0 0% 9%;
+  /* P2 corner — hot coral-red. Opponent identity, never mixed into a gradient with primary. */
+  --secondary: 8 88% 60%;
+  --secondary-foreground: 220 20% 6%;
 
-  --muted: 0 0% 13%;
-  --muted-foreground: 0 0% 63%;
+  --muted: 220 10% 14%;
+  --muted-foreground: 220 6% 63%;
 
   /* Muted hover/focus surface for menu items, ghost buttons, etc. — not a brand color. */
-  --accent: 0 0% 15%;
+  --accent: 220 10% 15%;
   --accent-foreground: 0 0% 96%;
 
-  /* Hot-pink highlight (XP, achievements, streaks) — no purple in the palette. */
-  --highlight: 330 85% 63%;
-  --highlight-foreground: 0 0% 9%;
+  /* XP / streak / achievements — a third combat-HUD color, not primary or secondary. */
+  --highlight: 271 70% 65%;
+  --highlight-foreground: 0 0% 100%;
 
-  --destructive: 6 84% 62%;
-  --destructive-foreground: 0 0% 9%;
+  --destructive: 8 88% 60%;
+  --destructive-foreground: 220 20% 6%;
 
-  --warning: 38 92% 58%;
-  --warning-foreground: 0 0% 9%;
+  /* Timer/urgency only — never used for a resting brand element. */
+  --warning: 40 95% 55%;
+  --warning-foreground: 220 20% 6%;
 
-  --input: 0 0% 19%;
-  --ring: 84 81% 56%;
-  --chart-1: 84 81% 56%;
-  --chart-2: 178 78% 50%;
-  --chart-3: 330 85% 63%;
-  --chart-4: 38 92% 58%;
-  --chart-5: 340 82% 62%;
+  --input: 220 10% 20%;
+  --ring: 198 90% 58%;
+  --chart-1: 198 90% 58%;
+  --chart-2: 8 88% 60%;
+  --chart-3: 271 70% 65%;
+  --chart-4: 40 95% 55%;
+  --chart-5: 150 65% 50%;
 
-  --app-font-sans: 'Unbounded', 'Inter', sans-serif;
-  --app-font-display: 'Unbounded', 'Inter', sans-serif;
+  --app-font-sans: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --app-font-display: 'Anton', 'Arial Narrow', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: 'JetBrains Mono', Menlo, monospace;
-  --radius: 0.85rem;
+  --radius: 0.3rem;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.3);
   --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.35);
@@ -201,9 +202,9 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     background-image:
-      radial-gradient(ellipse 900px 500px at 15% -10%, hsl(var(--primary) / 0.10), transparent 60%),
-      radial-gradient(ellipse 900px 500px at 100% 0%, hsl(var(--secondary) / 0.08), transparent 60%);
-    background-repeat: no-repeat;
+      repeating-linear-gradient(180deg, hsl(0 0% 100% / 0.018) 0px, hsl(0 0% 100% / 0.018) 1px, transparent 1px, transparent 3px),
+      radial-gradient(ellipse 1400px 900px at 50% -20%, hsl(220 20% 12% / 0.9), transparent 65%);
+    background-repeat: repeat, no-repeat;
   }
 
   ::selection {
@@ -299,27 +300,28 @@
     @apply text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
   }
 
+  /* Flat cabinet bezel — a fighter-select panel, not a glass card. */
   .surface-panel {
-    @apply rounded-2xl border border-border bg-card/85 shadow-sm backdrop-blur-md;
+    @apply rounded-[var(--radius)] border border-border bg-card shadow-sm;
   }
 
+  /* Recessed CRT-screen panel: inset top hairline reads as light catching a bezel edge. */
   .glass-panel {
-    @apply rounded-2xl border border-white/10 bg-white/[0.03] shadow-lg backdrop-blur-xl;
+    @apply rounded-[var(--radius)] border border-border bg-surface shadow-md;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.06), 0 4px 16px -4px hsl(0 0% 0% / 0.5);
   }
 
+  /* Selection glow — apply only to the active/hovered/chosen state, never at rest. */
   .glow-primary {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.4), 0 8px 28px -6px hsl(var(--primary) / 0.45);
+    box-shadow: 0 0 0 1.5px hsl(var(--primary)), 0 0 24px -4px hsl(var(--primary) / 0.6);
   }
 
   .glow-primary-lg {
-    box-shadow: 0 0 60px -12px hsl(var(--primary) / 0.55);
+    box-shadow: 0 0 0 2px hsl(var(--primary)), 0 0 48px -8px hsl(var(--primary) / 0.7);
   }
 
-  .text-gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary-bright)), hsl(var(--secondary)));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  .glow-secondary {
+    box-shadow: 0 0 0 1.5px hsl(var(--secondary)), 0 0 24px -4px hsl(var(--secondary) / 0.6);
   }
 
   .safe-bottom {
@@ -344,16 +346,6 @@
 
   .pulse-ring {
     animation: quizit-pulse-ring 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  @keyframes quizit-pop-in {
-    0% { transform: scale(0.6); opacity: 0; }
-    60% { transform: scale(1.08); opacity: 1; }
-    100% { transform: scale(1); }
-  }
-
-  .pop-in {
-    animation: quizit-pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
 
   @keyframes quizit-float {
@@ -388,11 +380,54 @@
    * for brackets/root signs) with prefixed class names like `ga-td-divisor`,
    * `di-td-divident`, etc. These rules match on the stable suffix regardless
    * of topic prefix, and only apply inside sanitized question/explanation HTML. */
-  .indiabix-html img {
+  /* Tiny inline math glyphs (fraction brackets, root signs) live inside table
+   * cells or sup/sub — keep those glyph-sized. A standalone figure/diagram
+   * image (non-verbal reasoning figure sets, DI charts) is not, and gets the
+   * large-diagram treatment below. */
+  .indiabix-html td img,
+  .indiabix-html sup img,
+  .indiabix-html sub img {
     display: inline-block;
     vertical-align: middle;
     max-height: 1.4em;
     width: auto;
+  }
+
+  /* Standalone diagram/figure image: IndiaBix draws these black-on-white for a
+   * light page, so give it a light plate to sit on rather than floating a raw
+   * white rectangle on the dark ground — read as an inset screen, not a bug.
+   * Capped (not 100%) so it reads as one compact figure card, matching the
+   * ~400-600px content column IndiaBix itself draws these at. */
+  .indiabix-html > img,
+  .indiabix-html div > img:only-child {
+    display: block;
+    max-width: min(100%, 520px);
+    width: auto;
+    height: auto;
+    min-height: 64px;
+    margin: 0.75em auto 0;
+    padding: 16px;
+    background: hsl(0 0% 96%);
+    border: 1px solid hsl(var(--border));
+    border-radius: calc(var(--radius) - 4px);
+  }
+
+  /* The "Problem Figures: … Answer Figures:" / "(X)  (1)  (2)  (3)  (4)" label
+   * row under a figure image — IndiaBix's own rule (main.min.css), ported
+   * verbatim: a small fixed font at `white-space: nowrap`, trusting literal
+   * &nbsp; run widths for alignment rather than any flex/grid reconstruction.
+   * SafeHtml's expandSpacingRuns restores those runs when the source lost them
+   * to whitespace collapsing; this rule is what makes them mean something. */
+  .indiabix-html .nvr-ques-text {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    margin: 0.3em auto 0;
+    padding-bottom: 0.2em;
+    font-size: 0.85em;
+    color: hsl(var(--muted-foreground));
+    text-align: center;
+    white-space: nowrap;
   }
 
   .indiabix-html table[class*="-tbl-answer"] {
@@ -434,8 +469,104 @@
     white-space: nowrap;
   }
 
+  /* IndiaBix's dark-theme color for an algebra variable letter (main.min.css:
+   * `body.darkTheme i.ga-var{color:#88c999}`), ported verbatim since we're
+   * always dark. */
   .indiabix-html i[class*="-var"] {
     font-style: italic;
+    margin-right: 0.3em;
+    color: #88c999;
+  }
+
+  /* Square/cube/nth-root and division-mark symbols ship as small background-
+   * image GIFs (main.min.css), not `<img>` tags — SafeHtml's src-rewrite hook
+   * never touches them, so they silently rendered blank. Ported with absolute
+   * URLs, plus IndiaBix's own dark-theme treatment (the GIFs are black ink on
+   * transparent, so `filter: invert()` flips them to read on our dark ground,
+   * exactly as `body.darkTheme .root, …` does on the source site). */
+  .indiabix-html .ga-root-h1,
+  .indiabix-html .ga-td-root-up-h2 {
+    background-image: url("https://www.indiabix.com/_files/images/aptitude/1-sym-root-h1.gif");
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding-left: 10px;
+    padding-top: 1px;
+  }
+  .indiabix-html .ga-root-h2 {
+    background-image: url("https://www.indiabix.com/_files/images/aptitude/1-sym-root-h2.gif");
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding-left: 10px;
+    padding-top: 2px;
+  }
+  .indiabix-html .ga-3root-h1 {
+    background-image: url("https://www.indiabix.com/_files/images/aptitude/1-sym-3root-h1.gif");
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding-left: 10px;
+    padding-top: 1px;
+  }
+  .indiabix-html .ga-nroot-h1 {
+    background-image: url("https://www.indiabix.com/_files/images/aptitude/1-sym-nroot-h1.gif");
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding-left: 10px;
+    padding-top: 1px;
+  }
+  .indiabix-html .ga-tbl-dsqrt {
+    background-image: url("https://www.indiabix.com/_files/images/aptitude/1-sym-droot-h1.gif");
+    background-repeat: no-repeat;
+    background-position: left top;
+    border: none;
+  }
+  .indiabix-html .ga-td-xmark {
+    background-image: url("https://www.indiabix.com/_files/images/aptitude/1-bg-xmark.gif");
+    background-repeat: no-repeat;
+    width: 350px;
+    height: 100px;
+    vertical-align: middle;
+  }
+  .indiabix-html .root {
+    background-image: url("https://www.indiabix.com/_files/images/chemical-engineering/common/root.gif");
+    background-position: top left;
+    background-repeat: no-repeat;
+    padding-left: 10px;
+    padding-top: 1px;
+  }
+  .indiabix-html .root3 {
+    background-image: url("https://www.indiabix.com/_files/images/chemical-engineering/common/root3.gif");
+    background-position: top left;
+    background-repeat: no-repeat;
+    padding-left: 10px;
+    padding-top: 1px;
+  }
+  .indiabix-html .rootn {
+    background-image: url("https://www.indiabix.com/_files/images/chemical-engineering/common/rootn.gif");
+    background-position: top left;
+    background-repeat: no-repeat;
+    padding-left: 10px;
+    padding-top: 1px;
+  }
+  /* Full invert (not IndiaBix's partial 0.75 — we need an exact self-cancelling
+   * pair) flips the black-ink GIF to read on our dark ground. SafeHtml wraps the
+   * element's real content (the number/exponent sitting on top of the glyph) in
+   * a `.ga-root-content` span that inverts right back, so only the glyph shifts. */
+  .indiabix-html .root,
+  .indiabix-html .root3,
+  .indiabix-html .rootn,
+  .indiabix-html .ga-td-xmark,
+  .indiabix-html .ga-td-root-up-h2,
+  .indiabix-html .ga-3root-h1,
+  .indiabix-html .ga-nroot-h1,
+  .indiabix-html .ga-tbl-dsqrt,
+  .indiabix-html .ga-root-h1,
+  .indiabix-html .ga-root-h2 {
+    filter: invert(1);
+  }
+
+  .indiabix-html .ga-root-content {
+    display: inline;
+    filter: invert(1);
   }
 
   .indiabix-html p {

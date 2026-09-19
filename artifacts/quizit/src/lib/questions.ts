@@ -50,6 +50,9 @@ export function toUiQuestion(raw: RawQuestion): Question {
   const textHtml = typeof raw.text_html === "string" ? raw.text_html.trim() : "";
   if (textHtml) question.textHtml = textHtml;
 
+  const directionsHtml = typeof raw.directions_html === "string" ? raw.directions_html.trim() : "";
+  if (directionsHtml) question.directionsHtml = directionsHtml;
+
   const optionsHtml = toOptionalOptionRecord(raw.options_html);
   if (optionsHtml) question.optionsHtml = optionsHtml;
 

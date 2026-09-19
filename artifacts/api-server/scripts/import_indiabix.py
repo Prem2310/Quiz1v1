@@ -27,10 +27,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.core.config import get_settings  # noqa: E402
 
 # These IndiaBix subtopics present each question as one of a set that shares a single
-# "Directions to Solve" passage/table/chart scraped separately (or not at all) from the
-# question text itself, so a standalone question here is missing the context it needs to
-# answer. We don't currently scrape that shared context, so hide these until we do.
-INCOMPLETE_WITHOUT_CONTEXT_SLUGS = (
+# "Directions to Solve" passage/table/chart, scraped into question.directions_html. A
+# subtopic is only safe to show once every one of its questions carries that context —
+# otherwise some questions in it would render with no way to answer them.
+CONTEXT_DEPENDENT_SLUGS = (
     "table-charts",
     "bar-charts",
     "pie-charts",
@@ -72,12 +72,25 @@ async def run(args: argparse.Namespace) -> None:
             await load_file(conn, args.subtopic, "subtopic")
             await load_file(conn, args.question, "question")
 
-            deactivated = await conn.fetch(
-                "UPDATE subtopic SET is_active = false WHERE slug = ANY($1::text[]) RETURNING id, slug",
-                list(INCOMPLETE_WITHOUT_CONTEXT_SLUGS),
+            # A context-dependent subtopic goes active only once none of its questions are
+            # still missing directions_html; otherwise (partially or fully un-scraped) it's
+            # deactivated so it can't be picked for practice/duels yet.
+            updated = await conn.fetch(
+                """
+                UPDATE subtopic
+                SET is_active = NOT EXISTS (
+                    SELECT 1 FROM question
+                    WHERE question.subtopic_id = subtopic.id
+                      AND question.directions_html IS NULL
+                )
+                WHERE slug = ANY($1::text[])
+                RETURNING id, slug, is_active
+                """,
+                list(CONTEXT_DEPENDENT_SLUGS),
             )
-            for row in deactivated:
-                print(f"Deactivated subtopic (incomplete without shared IndiaBix context): {row['slug']}")
+            for row in updated:
+                status = "activated" if row["is_active"] else "deactivated (missing directions_html)"
+                print(f"Subtopic '{row['slug']}': {status}")
 
         counts = await conn.fetchrow(
             "SELECT (SELECT count(*) FROM topic) AS topics, "

@@ -38,6 +38,11 @@ def elo_deltas(rating_a: float, rating_b: float, score_a: float, k: float = ELO_
     return delta_a, -delta_a
 
 
+def rematch_factor(recent_rematches: int) -> float:
+    """Elo damping for the same two players duelling repeatedly in a short window (blocks rating farming)."""
+    return max(0.25, 1 - 0.25 * recent_rematches)
+
+
 def bump_daily_streak(user: "UserData", now: datetime | None = None) -> None:
     """Update a user's daily activity streak after any completed quiz/duel."""
     now = now or datetime.now(UTC)
