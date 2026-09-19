@@ -11,11 +11,16 @@ class Base(DeclarativeBase):
 
 
 def _engine_kwargs(url: str) -> dict:
-    return {"connect_args": {"check_same_thread": False}} if url.startswith("sqlite") else {}
+    if url.startswith("sqlite"):
+        return {"connect_args": {"check_same_thread": False}}
+    # pool_pre_ping would send a SELECT 1 before EVERY checkout: one extra network round trip (100-300 ms to a
+    # remote Supabase) on every API request. pool_recycle retires connections before the pooler's idle timeout
+    # instead; LIFO keeps hot connections hot so idle ones age out.
+    return {"pool_pre_ping": False, "pool_recycle": 240, "pool_size": 5, "max_overflow": 10, "pool_use_lifo": True}
 
 
 settings = get_settings()
-engine = create_async_engine(settings.async_database_url, echo=False, pool_pre_ping=True, **_engine_kwargs(settings.async_database_url))
+engine = create_async_engine(settings.async_database_url, echo=False, **_engine_kwargs(settings.async_database_url))
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 

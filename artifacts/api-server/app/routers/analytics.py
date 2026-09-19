@@ -4,10 +4,11 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, Query
 from sqlalchemy import Integer, desc, func, or_, select
 
+from app.core.adaptive import get_catalog, load_profiles
 from app.core.scoring import league_for_rating
 from app.dependencies import CurrentUser, DbSession
 from app.models import FriendRequest, Question, QuizHistory, Subtopic, Topic, UserData, UserQuestionStats, UserQuizHistory, UserQuizResponse
-from app.schemas import AnalyticsSummary, AttemptSummary, LeaderboardEntry, LeaderboardScope, ProgressTrendPoint, TopicInsight
+from app.schemas import AnalyticsSummary, AttemptSummary, LeaderboardEntry, LeaderboardScope, ProgressTrendPoint, SubtopicWeakness, TopicInsight
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -16,21 +17,11 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 async def my_summary(current_user: CurrentUser, db: DbSession) -> AnalyticsSummary:
     total = current_user.total_correct + current_user.total_incorrect
     accuracy = round(current_user.total_correct / total * 100, 2) if total else 0
-    weak_topic = await db.scalar(
-        select(Topic.name)
-        .join(Subtopic, Subtopic.topic_id == Topic.id)
-        .join(Question, Question.subtopic_id == Subtopic.id)
-        .join(UserQuizResponse, UserQuizResponse.question_id == Question.id)
-        .join(UserQuizHistory, UserQuizHistory.id == UserQuizResponse.user_quiz_history_id)
-        .where(UserQuizHistory.user_id == current_user.id, UserQuizResponse.is_correct.is_(False))
-        .group_by(Topic.id, Topic.name)
-        .order_by(desc(func.count(UserQuizResponse.id)))
-        .limit(1)
-    )
-    topic = weak_topic or await db.scalar(select(Topic.name).where(Topic.is_active.is_(True)).order_by(Topic.name).limit(1))
-    due_for_review = await db.scalar(
-        select(func.count(UserQuestionStats.id)).where(UserQuestionStats.user_id == current_user.id, UserQuestionStats.due_at <= func.now())
-    )
+    now = datetime.now(UTC)
+    catalog = await get_catalog(db)
+    profile = (await load_profiles(db, [current_user.id], now))[current_user.id]
+    due_for_review = sum(p.due for p in profile.values())
+    topic = _weakest_topic(catalog, profile) or (catalog["subtopics"][0]["topic_name"] if catalog["subtopics"] else None)
     rank = await db.scalar(select(func.count(UserData.id)).where(UserData.is_active.is_(True), UserData.user_rating > current_user.user_rating))
     return AnalyticsSummary(
         total_points=current_user.total_points,
@@ -47,6 +38,43 @@ async def my_summary(current_user: CurrentUser, db: DbSession) -> AnalyticsSumma
         league=league_for_rating(current_user.user_rating),
         due_for_review=int(due_for_review or 0),
     )
+
+
+def _weakest_topic(catalog: dict, profile: dict) -> str | None:
+    """Topic with the lowest smoothed accuracy among topics the user has actually attempted."""
+    per_topic: dict[str, list[int]] = defaultdict(lambda: [0, 0])  # name -> [seen, correct]
+    for sub in catalog["subtopics"]:
+        p = profile.get(sub["id"])
+        if p:
+            per_topic[sub["topic_name"]][0] += p.seen
+            per_topic[sub["topic_name"]][1] += p.correct
+    ranked = [(((correct + 2) / (seen + 3)), name) for name, (seen, correct) in per_topic.items() if seen]
+    return min(ranked)[1] if ranked else None
+
+
+@router.get("/me/weakness", response_model=list[SubtopicWeakness])
+async def my_weakness(current_user: CurrentUser, db: DbSession, limit: int = Query(default=10, ge=1, le=100)) -> list[SubtopicWeakness]:
+    """Subtopics the user is demonstrably weak in, strongest evidence first."""
+    catalog = await get_catalog(db)
+    profile = (await load_profiles(db, [current_user.id], datetime.now(UTC)))[current_user.id]
+    rows = [
+        SubtopicWeakness(
+            subtopic_id=sub["id"],
+            subtopic_name=sub["name"],
+            topic_id=sub["topic_id"],
+            topic_name=sub["topic_name"],
+            attempted=profile[sub["id"]].seen,
+            accuracy=round(profile[sub["id"]].accuracy * 100, 1),
+            weakness=round(profile[sub["id"]].weakness, 3),
+            unresolved=profile[sub["id"]].unresolved,
+            due_for_review=profile[sub["id"]].due,
+        )
+        for sub in catalog["subtopics"]
+        if sub["id"] in profile
+    ]
+    # Rank by weakness discounted for thin evidence: 4 misses is a hint, 30 attempts is a pattern. (Selection keeps its
+    # own exploration bonus for barely-touched subtopics; this ordering is only for what we tell the user.)
+    return sorted(rows, key=lambda r: (-r.weakness * min(1.0, r.attempted / 10), -r.attempted))[:limit]
 
 
 def _entry(user: UserData, rank: int, is_me: bool) -> LeaderboardEntry:
@@ -182,33 +210,25 @@ async def my_topic_insights(current_user: CurrentUser, db: DbSession, days: int 
 
 @router.get("/me/trend", response_model=list[ProgressTrendPoint])
 async def my_progress_trend(current_user: CurrentUser, db: DbSession, days: int = Query(default=30, ge=7, le=180)) -> list[ProgressTrendPoint]:
-    """Daily accuracy trend for the progress chart, bucketed in Python so it works on both SQLite and Postgres."""
+    """Daily accuracy trend: grouped in the database (one small result set instead of every response row)."""
     since = datetime.now(UTC) - timedelta(days=days)
-    rows = list(
-        (
-            await db.scalars(
-                select(UserQuizResponse)
-                .join(UserQuizHistory, UserQuizHistory.id == UserQuizResponse.user_quiz_history_id)
-                .where(UserQuizHistory.user_id == current_user.id, UserQuizResponse.created_at >= since)
-            )
-        ).all()
-    )
-    buckets: dict[str, list[int]] = defaultdict(lambda: [0, 0])  # date -> [correct, incorrect]
-    for row in rows:
-        key = row.created_at.date().isoformat()
-        buckets[key][0 if row.is_correct else 1] += 1
-
-    points = []
-    for key in sorted(buckets):
-        correct, incorrect = buckets[key]
-        attempts = correct + incorrect
-        points.append(
-            ProgressTrendPoint(
-                date=key,
-                attempts=attempts,
-                correct=correct,
-                incorrect=incorrect,
-                accuracy=round(correct / attempts * 100, 2) if attempts else 0,
-            )
+    day = func.date(UserQuizResponse.created_at)
+    rows = (
+        await db.execute(
+            select(day, func.count(UserQuizResponse.id), func.sum(func.cast(UserQuizResponse.is_correct, Integer)))
+            .join(UserQuizHistory, UserQuizHistory.id == UserQuizResponse.user_quiz_history_id)
+            .where(UserQuizHistory.user_id == current_user.id, UserQuizResponse.created_at >= since)
+            .group_by(day)
+            .order_by(day)
         )
-    return points
+    ).all()
+    return [
+        ProgressTrendPoint(
+            date=str(d),
+            attempts=int(attempts),
+            correct=int(correct or 0),
+            incorrect=int(attempts) - int(correct or 0),
+            accuracy=round(int(correct or 0) / int(attempts) * 100, 2) if attempts else 0,
+        )
+        for d, attempts, correct in rows
+    ]

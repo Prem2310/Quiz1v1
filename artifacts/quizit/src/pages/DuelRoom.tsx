@@ -8,7 +8,9 @@ import {
   getCreateChallengeMutationOptions,
   getGetChallengeQueryKey,
   getGetCurrentUserQueryKey,
+  getGetHeadToHeadQueryKey,
   getGetMyAnalyticsQueryKey,
+  getGetMyWeaknessQueryKey,
   useGetChallenge,
   useGetDuel,
 } from "@workspace/api-client-react";
@@ -17,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { ConnectionIndicator, LoadingState } from "@/components/common/StateBlocks";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { QuestionPanel } from "@/components/quiz/QuestionPanel";
+import { HeadToHeadPanel } from "@/components/quiz/HeadToHeadPanel";
 import { Countdown } from "@/components/quiz/Countdown";
 import { CircularTimer } from "@/components/quiz/CircularTimer";
 import { DisplayText3D } from "@/components/brand/DisplayText3D";
@@ -60,6 +63,7 @@ export default function DuelRoom() {
   const questionRef = useRef<Question | null>(null);
   const selectedRef = useRef<OptionKey | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const opponentIdRef = useRef(0);
   questionRef.current = question;
   selectedRef.current = selected;
 
@@ -71,9 +75,13 @@ export default function DuelRoom() {
     return summary.player1.user_id === user.id ? summary.player2 : summary.player1;
   }, [summaryQuery.data, user]);
 
+  opponentIdRef.current = opponent?.user_id ?? 0;
+
   useEffect(() => {
     const summary = summaryQuery.data;
-    if (!summary || phase !== "connecting" || !user) return;
+    // "gone" is included: for an already-finished duel the socket closes instantly and would otherwise
+    // win the race against this (slower) REST summary, wrongly reporting "your opponent left".
+    if (!summary || (phase !== "connecting" && phase !== "gone") || !user) return;
     if (summary.status === "completed") {
       const isPlayer1 = summary.player1.user_id === user.id;
       const myScore = isPlayer1 ? summary.player1_score : summary.player2_score;
@@ -124,6 +132,9 @@ export default function DuelRoom() {
           setPhase("finished");
           void queryClient.invalidateQueries({ queryKey: getGetMyAnalyticsQueryKey() });
           void queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+          // The record and the weak-topic model both just changed (the duel's answers were graded server-side).
+          void queryClient.invalidateQueries({ queryKey: getGetHeadToHeadQueryKey(opponentIdRef.current) });
+          void queryClient.invalidateQueries({ queryKey: getGetMyWeaknessQueryKey() });
         } else if (message.type === "opponent_left") {
           setPhase("gone");
         }
@@ -417,6 +428,12 @@ function DuelSummaryView({
             <AnimatedNumber value={xp} className="numeric mt-1 block text-xl font-bold text-highlight" />
           </div>
         </div>
+
+        {opponent ? (
+          <div className="mt-4">
+            <HeadToHeadPanel opponentId={opponent.user_id} opponentName={opponent.name} phase="after" />
+          </div>
+        ) : null}
 
         {rematchState === "sent" ? (
           <p className="mt-6 text-center text-xs text-muted-foreground">Waiting for {opponent?.name ?? "your opponent"} to respond…</p>

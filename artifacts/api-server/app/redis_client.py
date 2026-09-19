@@ -1,21 +1,32 @@
 import json
-from collections.abc import AsyncIterator
+import logging
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any
 
 from redis.asyncio import Redis
 
 from app.core.config import get_settings
 
+log = logging.getLogger(__name__)
+
 
 class RoomBroker:
+    """Redis handle: pub/sub for rooms plus a tiny JSON cache. Every method is a no-op without Redis."""
+
     def __init__(self) -> None:
         self.client: Redis | None = None
+        self._local: dict[str, tuple[float, Any]] = {}  # in-process fallback so a missing/dead Redis still spares the database
 
     async def connect(self) -> None:
         url = get_settings().redis_url
         if not url:
             return
-        self.client = Redis.from_url(url, decode_responses=True)
-        await self.client.ping()
+        # protocol=2: redis-py >= 6 opens with HELLO (RESP3), which Redis < 6 (incl. the Windows 3.0 build) rejects.
+        # Short timeouts: a hung Redis must never stall an API request; callers fall back to the database.
+        client = Redis.from_url(url, decode_responses=True, protocol=2, socket_connect_timeout=1.5, socket_timeout=1.5)
+        await client.ping()
+        self.client = client
 
     async def close(self) -> None:
         if self.client:
@@ -38,6 +49,38 @@ class RoomBroker:
         finally:
             await pubsub.unsubscribe(f"quizit:room:{room_id}")
             await pubsub.aclose()
+
+    async def cached(self, key: str, ttl: int, loader: Callable[[], Awaitable[Any]]) -> Any:
+        """Return the JSON value cached under `key`, else run `loader()` and cache its (JSON-safe) result for `ttl` seconds."""
+        if self.client:
+            try:
+                hit = await self.client.get(f"quizit:cache:{key}")
+                if hit is not None:
+                    return json.loads(hit)
+            except Exception:
+                log.warning("Redis read failed for %s; falling back to the database", key)
+        else:
+            entry = self._local.get(key)
+            if entry and entry[0] > time.monotonic():
+                return entry[1]
+        value = await loader()
+        if self.client:
+            try:
+                await self.client.set(f"quizit:cache:{key}", json.dumps(value), ex=ttl)
+            except Exception:
+                log.warning("Redis write failed for %s", key)
+        else:
+            self._local[key] = (time.monotonic() + ttl, value)
+        return value
+
+    async def invalidate(self, *keys: str) -> None:
+        for key in keys:
+            self._local.pop(key, None)
+        if self.client and keys:
+            try:
+                await self.client.delete(*[f"quizit:cache:{k}" for k in keys])
+            except Exception:
+                log.warning("Redis invalidate failed for %s", keys)
 
 
 room_broker = RoomBroker()

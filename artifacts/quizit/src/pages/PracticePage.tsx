@@ -2,19 +2,22 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useSearch } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Check, RotateCcw, Shuffle, Sparkles, XCircle } from "lucide-react";
+import { CheckCircle2, Check, Brain, Flag, RotateCcw, Sparkles, XCircle } from "lucide-react";
 import {
   getCompleteQuizMutationOptions,
   getCreateQuizMutationOptions,
   getGetMyAnalyticsQueryKey,
+  getGetMyWeaknessQueryKey,
   getListSubtopicsQueryKey,
   getStartQuizMutationOptions,
   useGetMyAnalytics,
+  useGetMyWeakness,
   useListSubtopics,
   useListTopics,
   QuizCreateQuizMode,
   type Question as ApiQuestion,
   type QuizComplete,
+  type SubtopicWeakness,
 } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
@@ -22,6 +25,7 @@ import { LoadingState, ErrorState } from "@/components/common/StateBlocks";
 import { QuestionPanel } from "@/components/quiz/QuestionPanel";
 import { CircularTimer } from "@/components/quiz/CircularTimer";
 import { QuestionReviewCard } from "@/components/quiz/QuestionReviewCard";
+import { WeakSpotList, isWeakSpot } from "@/components/quiz/WeakSpotList";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { iconForTopic } from "@/constants/topics";
@@ -44,13 +48,23 @@ interface LocalAnswer {
   timeTaken: number;
 }
 
+interface SessionConfig {
+  mode: QuizCreateQuizMode;
+  topicId: number | null;
+  subtopicId: number | null;
+}
+
+const idParam = (value: string | null) => (value && /^\d+$/.test(value) ? Number(value) : null);
+
 export default function PracticePage() {
   const search = useSearch();
-  const wantsWeak = new URLSearchParams(search).get("mode") === "weak_topics";
+  // Deep links (Arena "Review now", Progress "Drill") preselect the mode and scope.
+  const params = new URLSearchParams(search);
+  const wantsWeak = params.get("mode") === "weak_topics";
 
   const [phase, setPhase] = useState<Phase>("pick");
-  const [topicId, setTopicId] = useState<number | null>(null);
-  const [subtopicId, setSubtopicId] = useState<number | null>(null);
+  const [topicId, setTopicId] = useState<number | null>(() => idParam(params.get("topic")));
+  const [subtopicId, setSubtopicId] = useState<number | null>(() => idParam(params.get("subtopic")));
   const [mode, setMode] = useState<QuizCreateQuizMode>(wantsWeak ? QuizCreateQuizMode.weak_topics : QuizCreateQuizMode.practice);
   const [numQuestions, setNumQuestions] = useState(10);
   const [timePerQuestion, setTimePerQuestion] = useState(30);
@@ -70,6 +84,7 @@ export default function PracticePage() {
     query: { queryKey: getListSubtopicsQueryKey(topicId ?? 0), enabled: topicId != null },
   });
   const analyticsQuery = useGetMyAnalytics();
+  const weakSpots = (useGetMyWeakness({ limit: 12 }).data ?? []).filter(isWeakSpot).slice(0, 4);
 
   const createQuiz = useMutation(getCreateQuizMutationOptions());
   const startQuiz = useMutation(getStartQuizMutationOptions());
@@ -87,10 +102,17 @@ export default function PracticePage() {
   );
   secondsLeftRef.current = secondsLeft;
 
-  async function handleStart() {
+  // `override` lets one-click actions (drill a weak spot, drill your misses) start immediately with their own scope.
+  async function handleStart(override?: SessionConfig) {
+    const config = override ?? { mode, topicId, subtopicId };
+    if (override) {
+      setMode(override.mode);
+      setTopicId(override.topicId);
+      setSubtopicId(override.subtopicId);
+    }
     try {
       const quiz = await createQuiz.mutateAsync({
-        data: { topic_id: topicId, subtopic_id: subtopicId, num_questions: numQuestions, time_per_question: timePerQuestion, quiz_mode: mode },
+        data: { topic_id: config.topicId, subtopic_id: config.subtopicId, num_questions: numQuestions, time_per_question: timePerQuestion, quiz_mode: config.mode },
       });
       if (quiz.question_ids.length < numQuestions) {
         toast({ title: "Fewer questions than requested", description: `Only ${quiz.question_ids.length} question${quiz.question_ids.length === 1 ? "" : "s"} available for this selection — starting with those.` });
@@ -140,6 +162,7 @@ export default function PracticePage() {
       setResult(final);
       setReviewFilter("all");
       void queryClient.invalidateQueries({ queryKey: getGetMyAnalyticsQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: getGetMyWeaknessQueryKey() });
       setPhase("result");
     } catch (err) {
       toast({ title: "Couldn't finish this session", description: getErrorMessage(err), variant: "destructive" });
@@ -197,7 +220,12 @@ export default function PracticePage() {
         <div className="mt-6">
           <QuestionPanel question={currentQuestion} selected={selected} feedback={{}} disabled={locked} onSelect={recordAnswer} />
         </div>
-        <p className="mt-6 text-center text-xs text-muted-foreground">Press A · B · C · D to answer</p>
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Press A · B · C · D to answer</p>
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={reset}>
+            <Flag className="h-3.5 w-3.5" /> Quit
+          </Button>
+        </div>
       </div>
     );
   }
@@ -218,8 +246,24 @@ export default function PracticePage() {
             <ResultStat label="Missed" value={result.total_incorrect} tone="text-destructive" />
             <ResultStat label="XP" value={result.xp_gained ?? 0} tone="text-highlight" />
           </div>
-          <div className="mt-8 flex flex-col gap-2 sm:flex-row">
-            <Button className="flex-1 glow-primary" onClick={reset}>
+          {result.total_incorrect > 0 ? (
+            <div className="mt-8 border border-secondary/60 bg-secondary/5 p-4 text-left">
+              <p className="text-sm font-semibold text-foreground">
+                {result.total_incorrect} question{result.total_incorrect === 1 ? "" : "s"} to lock in
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Missed questions come back first, until you answer them right.</p>
+              <Button
+                className="mt-3 w-full"
+                variant="secondary"
+                disabled={createQuiz.isPending || startQuiz.isPending}
+                onClick={() => void handleStart({ mode: QuizCreateQuizMode.weak_topics, topicId, subtopicId })}
+              >
+                <Sparkles className="h-4 w-4" /> {createQuiz.isPending || startQuiz.isPending ? "Preparing…" : "Drill my misses"}
+              </Button>
+            </div>
+          ) : null}
+          <div className={`flex flex-col gap-2 sm:flex-row ${result.total_incorrect > 0 ? "mt-3" : "mt-8"}`}>
+            <Button className="flex-1" variant={result.total_incorrect > 0 ? "outline" : "default"} onClick={reset}>
               <RotateCcw className="h-4 w-4" /> Practice again
             </Button>
             <Link href="/arena" className="flex-1">
@@ -258,37 +302,56 @@ export default function PracticePage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <PageHeader eyebrow="Practice" title="Choose what to drill" description="Pick a topic, or let QuizIt review what you've missed before." />
+        <PageHeader title="Choose what to drill" description="Pick a scope and QuizIt builds the session: what you missed first, then new questions from your weaker areas." />
       </Reveal>
 
       <Reveal delay={0.05}>
         <p className="label-micro mb-3">Mode</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <HoverCard>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <HoverCard className="sm:col-span-2">
             <ModeCard
-              icon={Shuffle}
-              title="Random practice"
-              body="A fresh mix of questions from your chosen topic and subtopic."
+              corner="P1"
+              icon={Brain}
+              title="Smart practice"
+              body="Questions you're due to review, then new ones weighted toward your weaker subtopics. Nothing repeats until you've seen it all."
               active={mode === QuizCreateQuizMode.practice}
               onClick={() => setMode(QuizCreateQuizMode.practice)}
             />
           </HoverCard>
           <HoverCard>
             <ModeCard
+              corner="P2"
               icon={Sparkles}
               title="Weak topics"
               body={
                 analyticsQuery.data && analyticsQuery.data.due_for_review > 0
-                  ? `${analyticsQuery.data.due_for_review} question${analyticsQuery.data.due_for_review === 1 ? "" : "s"} due for review right now.`
-                  : "Prioritizes questions you've gotten wrong before, spaced for retention."
+                  ? `${analyticsQuery.data.due_for_review} due for review now.`
+                  : "Nothing due yet. Misses from any session land here."
               }
-              tone="warning"
               active={mode === QuizCreateQuizMode.weak_topics}
               onClick={() => setMode(QuizCreateQuizMode.weak_topics)}
             />
           </HoverCard>
         </div>
       </Reveal>
+
+      {weakSpots.length > 0 ? (
+        <Reveal delay={0.08}>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="label-micro">Your weak spots</p>
+            <Link href="/progress" className="text-xs font-semibold text-primary hover:underline">
+              See all →
+            </Link>
+          </div>
+          <WeakSpotList
+            items={weakSpots}
+            disabled={createQuiz.isPending || startQuiz.isPending}
+            onDrill={(item: SubtopicWeakness) =>
+              void handleStart({ mode: QuizCreateQuizMode.weak_topics, topicId: item.topic_id, subtopicId: item.subtopic_id })
+            }
+          />
+        </Reveal>
+      ) : null}
 
       <div>
         <p className="label-micro mb-3">Topic</p>
@@ -371,48 +434,65 @@ export default function PracticePage() {
         <OptionGroup<number> label="Seconds / question" values={TIME_OPTIONS} selected={timePerQuestion} onSelect={setTimePerQuestion} />
       </Reveal>
 
-      <Reveal delay={0.15}>
+      <Reveal delay={0.15} className="flex flex-wrap items-center gap-4">
         <Button size="lg" className="w-full glow-primary sm:w-auto" onClick={() => void handleStart()} disabled={createQuiz.isPending || startQuiz.isPending}>
           {createQuiz.isPending || startQuiz.isPending ? "Preparing…" : "Start session"}
         </Button>
+        <p className="numeric text-xs text-muted-foreground">
+          {numQuestions} questions · {timePerQuestion}s each ·{" "}
+          {subtopicsQuery.data?.find((st) => st.id === subtopicId)?.name ?? topicsQuery.data?.find((t) => t.id === topicId)?.name ?? "All topics"} ·{" "}
+          {mode === QuizCreateQuizMode.weak_topics ? "weak topics" : "smart practice"}
+        </p>
       </Reveal>
     </div>
   );
 }
 
 function ModeCard({
+  corner,
   icon: Icon,
   title,
   body,
   active,
   onClick,
-  tone = "primary",
 }: {
-  icon: typeof Shuffle;
+  corner: "P1" | "P2";
+  icon: typeof Brain;
   title: string;
   body: string;
   active: boolean;
   onClick: () => void;
-  tone?: "primary" | "warning";
 }) {
-  const toneClass = tone === "warning" ? "bg-warning/10 text-warning" : "bg-primary/10 text-primary";
+  const isP1 = corner === "P1";
+  const cornerColor = isP1 ? "text-primary" : "text-secondary";
+  const cornerBorder = isP1 ? "border-primary" : "border-secondary";
+  const border = active
+    ? isP1
+      ? "border-primary bg-primary/5 glow-primary"
+      : "border-secondary bg-secondary/5 glow-secondary"
+    : isP1
+      ? "border-border hover:border-primary/50"
+      : "border-border hover:border-secondary/50";
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`glass-panel flex w-full items-start gap-3 p-5 text-left transition ${active ? "glow-primary" : "hover:shadow-md"}`}
+      className={`relative flex h-full min-h-0 w-full flex-col justify-between border-2 bg-surface p-4 text-left transition-shadow sm:min-h-36 sm:p-5 ${border}`}
     >
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] ${active ? "bg-primary text-primary-foreground" : toneClass}`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <div className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border ${active ? "border-primary bg-primary" : "border-border"}`}>
-            {active ? <Check className="h-3 w-3 text-primary-foreground" /> : null}
-          </div>
+      <div className={`numeric absolute right-4 top-4 text-xs font-bold ${cornerColor}`}>{corner}</div>
+      <div>
+        <div className={`flex h-10 w-10 items-center justify-center border-2 ${cornerBorder} ${cornerColor}`}>
+          <Icon className="h-5 w-5" />
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">{body}</p>
+        <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
+        <p className="mt-1.5 max-w-xs text-xs text-muted-foreground">{body}</p>
+      </div>
+      <div
+        className={`mt-3 flex h-5 w-5 shrink-0 sm:mt-4 items-center justify-center border-2 ${
+          active ? `${cornerBorder} ${isP1 ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}` : "border-border"
+        }`}
+      >
+        {active ? <Check className="h-3 w-3" /> : null}
       </div>
     </button>
   );

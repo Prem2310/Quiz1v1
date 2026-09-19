@@ -17,14 +17,15 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, status
-from sqlalchemy import func, select
+from sqlalchemy import func, insert, or_, select
 
-from app.core.scoring import bump_daily_streak, elo_deltas, league_for_rating
+from app.core.adaptive import pair_filter, record_question_stats, select_duel_questions
+from app.core.scoring import bump_daily_streak, elo_deltas, league_for_rating, rematch_factor
 from app.core.security import decode_access_token
 from app.db import SessionLocal
 from app.dependencies import CurrentUser, DbSession
-from app.models import DuelChallenge, DuelMatch, Question, QuizHistory, QuizQuestion, Subtopic, Topic, UserData, UserQuizHistory
-from app.schemas import DuelChallengeCreate, DuelChallengeRead, DuelOpponent, DuelSummary
+from app.models import DuelChallenge, DuelMatch, Question, QuizHistory, QuizQuestion, Topic, UserData, UserQuizHistory, UserQuizResponse
+from app.schemas import DuelChallengeCreate, DuelChallengeRead, DuelOpponent, DuelSummary, HeadToHead, HeadToHeadResult
 
 router = APIRouter(tags=["duels"])
 
@@ -41,6 +42,9 @@ XP_PER_CORRECT_DUEL = 4
 DUEL_WIN_XP = 20
 DUEL_DRAW_XP = 8
 DUEL_LOSS_XP = 4
+REMATCH_AVOID_SECONDS = 20  # prefer someone new for this long before matching the same opponent again
+REMATCH_WINDOW = timedelta(minutes=30)
+ELO_REMATCH_WINDOW = timedelta(hours=24)
 
 
 async def _authenticate_ws(websocket: WebSocket) -> int | None:
@@ -65,6 +69,7 @@ class QueueEntry:
     matched_duel_id: int | None = None
     opponent: DuelOpponent | None = None
     notified: bool = False
+    recent_opponents: set[int] = field(default_factory=set)
 
 
 _queue: dict[int, QueueEntry] = {}
@@ -90,26 +95,11 @@ async def _create_duel(
     db.add(quiz)
     await db.flush()
 
-    query = select(Question.id).join(Question.subtopic).where(Question.is_active.is_(True), Subtopic.is_active.is_(True))
-    if topic_id is not None:
-        query = query.where(Subtopic.topic_id == topic_id)
-
-    question_ids = list((await db.scalars(query.order_by(func.random()).limit(num_questions))).all())
-    if len(question_ids) < num_questions:
-        # topic had too few questions; fall back to any active question
-        extra = list(
-            (
-                await db.scalars(
-                    select(Question.id)
-                    .where(Question.is_active.is_(True), Question.id.not_in(question_ids))
-                    .order_by(func.random())
-                    .limit(num_questions - len(question_ids))
-                )
-            ).all()
-        )
-        question_ids += extra
+    question_ids = await select_duel_questions(db, player1_id, player2_id, topic_id, num_questions)
+    if not question_ids:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="No questions are available for a duel right now")
     quiz.num_questions = len(question_ids)
-    db.add_all([QuizQuestion(quiz_history_id=quiz.id, question_id=qid, question_order=i) for i, qid in enumerate(question_ids)])
+    await db.execute(insert(QuizQuestion), [{"quiz_history_id": quiz.id, "question_id": qid, "question_order": i} for i, qid in enumerate(question_ids)])
 
     match = DuelMatch(
         quiz_history_id=quiz.id,
@@ -141,6 +131,8 @@ async def _attempt_match(entry: QueueEntry) -> DuelMatch | None:
                 continue
             if entry.topic_id is not None and candidate.topic_id is not None and entry.topic_id != candidate.topic_id:
                 continue
+            if elapsed < REMATCH_AVOID_SECONDS and (candidate.user_id in entry.recent_opponents or entry.user_id in candidate.recent_opponents):
+                continue
             gap = abs(candidate.rating - entry.rating)
             if gap > tolerance:
                 continue
@@ -169,6 +161,19 @@ async def _attempt_match(entry: QueueEntry) -> DuelMatch | None:
     return match
 
 
+async def _recent_opponents(db, user_id: int) -> set[int]:
+    rows = (
+        await db.execute(
+            select(DuelMatch.player1_id, DuelMatch.player2_id).where(
+                or_(DuelMatch.player1_id == user_id, DuelMatch.player2_id == user_id),
+                DuelMatch.status == "completed",
+                DuelMatch.completed_at >= datetime.now(UTC) - REMATCH_WINDOW,
+            )
+        )
+    ).all()
+    return {p2 if p1 == user_id else p1 for p1, p2 in rows}
+
+
 @router.websocket("/ws/matchmaking")
 async def matchmaking_socket(websocket: WebSocket, topic_id: int | None = Query(default=None)) -> None:
     user_id = await _authenticate_ws(websocket)
@@ -178,12 +183,13 @@ async def matchmaking_socket(websocket: WebSocket, topic_id: int | None = Query(
 
     async with SessionLocal() as db:
         user = await db.get(UserData, user_id)
+        recent_opponents = await _recent_opponents(db, user_id) if user else set()
     if user is None:
         await websocket.close(code=1008, reason="Unknown user")
         return
 
     await websocket.accept()
-    entry = QueueEntry(user_id=user.id, username=user.username, name=user.name, rating=user.user_rating, topic_id=topic_id, websocket=websocket)
+    entry = QueueEntry(user_id=user.id, username=user.username, name=user.name, rating=user.user_rating, topic_id=topic_id, websocket=websocket, recent_opponents=recent_opponents)
     async with _queue_lock:
         _queue[user.id] = entry
     await websocket.send_json({"type": "queued"})
@@ -239,6 +245,7 @@ class PlayerConn:
     correct: int = 0
     incorrect: int = 0
     answered_index: int | None = None
+    answers: dict[int, tuple[str | None, bool, int]] = field(default_factory=dict)  # index -> (selected, correct, seconds)
 
 
 class DuelSession:
@@ -300,8 +307,9 @@ class DuelSession:
             (question.answer_letter or "").strip().lower(),
         }
         conn.answered_index = index
+        elapsed = max(0.0, time.monotonic() - self.question_started_at)
+        conn.answers[index] = (selected, is_correct, round(elapsed))
         if is_correct:
-            elapsed = max(0.0, time.monotonic() - self.question_started_at)
             remaining_fraction = max(0.0, (self.time_per_question - elapsed) / self.time_per_question)
             conn.score += BASE_POINTS + round(SPEED_BONUS_MAX * remaining_fraction)
             conn.correct += 1
@@ -379,8 +387,15 @@ class DuelSession:
                 score_for_p1 = 0.0
                 winner_id = p2_id
 
-            delta1, delta2 = elo_deltas(u1.user_rating, u2.user_rating, score_for_p1)
             now = datetime.now(UTC)
+            rematches = await db.scalar(
+                select(func.count(DuelMatch.id)).where(
+                    pair_filter(p1_id, p2_id), DuelMatch.status == "completed", DuelMatch.completed_at >= now - ELO_REMATCH_WINDOW
+                )
+            )
+            factor = rematch_factor(int(rematches or 0))
+            delta1, delta2 = elo_deltas(u1.user_rating, u2.user_rating, score_for_p1)
+            delta1, delta2 = delta1 * factor, delta2 * factor
             xp_gained: dict[int, int] = {}
             for user, conn, delta in ((u1, p1, delta1), (u2, p2, delta2)):
                 is_winner = winner_id == user.id
@@ -406,6 +421,26 @@ class DuelSession:
                 user.total_xp += xp
                 bump_daily_streak(user, now)
                 await db.flush()
+                # Every duel answer feeds the same mastery/weak-topic model as practice. Unanswered = missed.
+                graded = []
+                rows = []
+                for index, question in enumerate(self.questions):
+                    selected, ok, seconds = conn.answers.get(index, (None, False, self.time_per_question))
+                    graded.append((question, ok))
+                    rows.append(
+                        {
+                            "user_quiz_history_id": attempt.id,
+                            "question_id": question.id,
+                            "attempted_option": selected,
+                            "selected_answer": selected,
+                            "is_correct": ok,
+                            "marks_obtained": 1 if ok else 0,
+                            "time_taken_seconds": seconds,
+                        }
+                    )
+                if rows:
+                    await db.execute(insert(UserQuizResponse), rows)
+                await record_question_stats(db, user.id, graded, now)
                 if user.id == p1_id:
                     match.player1_attempt_id = attempt.id
                 else:
@@ -562,31 +597,69 @@ async def get_duel(duel_id: int, current_user: CurrentUser, db: DbSession) -> Du
     )
 
 
+@router.get("/duels/head-to-head/{opponent_id}", response_model=HeadToHead)
+async def head_to_head(opponent_id: int, current_user: CurrentUser, db: DbSession) -> HeadToHead:
+    """The record between the signed-in user and one opponent, plus their most recent duels."""
+    matches = list(
+        (
+            await db.scalars(
+                select(DuelMatch)
+                .where(pair_filter(current_user.id, opponent_id), DuelMatch.status == "completed")
+                .order_by(DuelMatch.completed_at.desc())
+                .limit(50)
+            )
+        ).all()
+    )
+    wins = sum(1 for m in matches if m.winner_id == current_user.id)
+    draws = sum(1 for m in matches if m.winner_id is None)
+    recent = []
+    for m in matches[:5]:
+        mine_is_p1 = m.player1_id == current_user.id
+        before, after = (m.player1_rating_before, m.player1_rating_after) if mine_is_p1 else (m.player2_rating_before, m.player2_rating_after)
+        recent.append(
+            HeadToHeadResult(
+                duel_id=m.id,
+                result="draw" if m.winner_id is None else "win" if m.winner_id == current_user.id else "loss",
+                rating_change=round((after or before) - before, 1),
+                completed_at=m.completed_at,
+            )
+        )
+    return HeadToHead(opponent_id=opponent_id, played=len(matches), wins=wins, losses=len(matches) - wins - draws, draws=draws, recent=recent)
+
+
 # --------------------------------------------------------------------------
 # Direct challenges: custom duels between two known users, and rematches
 # --------------------------------------------------------------------------
 
 
+async def _challenges_read(db: DbSession, challenges: list[DuelChallenge]) -> list[DuelChallengeRead]:
+    """Serialise challenges with two bulk lookups (users, topics) instead of several queries per challenge."""
+    if not challenges:
+        return []
+    user_ids = {c.challenger_id for c in challenges} | {c.opponent_id for c in challenges}
+    users = {u.id: u for u in (await db.scalars(select(UserData).where(UserData.id.in_(user_ids)))).all()}
+    topic_ids = {c.topic_id for c in challenges if c.topic_id is not None}
+    topics = {t.id: t.name for t in (await db.scalars(select(Topic).where(Topic.id.in_(topic_ids)))).all()} if topic_ids else {}
+    return [
+        DuelChallengeRead(
+            id=c.id,
+            status=c.status,
+            challenger=_opponent_from_user(users.get(c.challenger_id)),
+            opponent=_opponent_from_user(users.get(c.opponent_id)),
+            topic_id=c.topic_id,
+            topic_name=topics.get(c.topic_id) if c.topic_id is not None else None,
+            num_questions=c.num_questions,
+            time_per_question=c.time_per_question,
+            duel_match_id=c.duel_match_id,
+            created_at=c.created_at,
+            expires_at=c.expires_at,
+        )
+        for c in challenges
+    ]
+
+
 async def _challenge_read(db: DbSession, challenge: DuelChallenge) -> DuelChallengeRead:
-    challenger = await db.get(UserData, challenge.challenger_id)
-    opponent = await db.get(UserData, challenge.opponent_id)
-    topic_name = None
-    if challenge.topic_id is not None:
-        topic = await db.get(Topic, challenge.topic_id)
-        topic_name = topic.name if topic else None
-    return DuelChallengeRead(
-        id=challenge.id,
-        status=challenge.status,
-        challenger=_opponent_from_user(challenger),
-        opponent=_opponent_from_user(opponent),
-        topic_id=challenge.topic_id,
-        topic_name=topic_name,
-        num_questions=challenge.num_questions,
-        time_per_question=challenge.time_per_question,
-        duel_match_id=challenge.duel_match_id,
-        created_at=challenge.created_at,
-        expires_at=challenge.expires_at,
-    )
+    return (await _challenges_read(db, [challenge]))[0]
 
 
 def _opponent_from_user(user: UserData | None) -> DuelOpponent:
@@ -595,8 +668,13 @@ def _opponent_from_user(user: UserData | None) -> DuelOpponent:
     return DuelOpponent(user_id=user.id, username=user.username, name=user.name, rating=user.user_rating, league=league_for_rating(user.user_rating))
 
 
+def _is_expired(challenge: DuelChallenge, now: datetime) -> bool:
+    expires = challenge.expires_at if challenge.expires_at.tzinfo else challenge.expires_at.replace(tzinfo=UTC)  # SQLite drops tzinfo
+    return expires < now
+
+
 async def _expire_if_stale(db: DbSession, challenge: DuelChallenge) -> DuelChallenge:
-    if challenge.status == "pending" and challenge.expires_at < datetime.now(UTC):
+    if challenge.status == "pending" and _is_expired(challenge, datetime.now(UTC)):
         challenge.status = "expired"
         challenge.responded_at = datetime.now(UTC)
         await db.commit()
@@ -647,12 +725,14 @@ async def list_incoming_challenges(current_user: CurrentUser, db: DbSession) -> 
             )
         ).all()
     )
-    fresh: list[DuelChallengeRead] = []
-    for challenge in challenges:
-        await _expire_if_stale(db, challenge)
-        if challenge.status == "pending":
-            fresh.append(await _challenge_read(db, challenge))
-    return fresh
+    now = datetime.now(UTC)
+    stale = [c for c in challenges if _is_expired(c, now)]
+    for challenge in stale:
+        challenge.status = "expired"
+        challenge.responded_at = now
+    if stale:
+        await db.commit()  # one commit for all of them
+    return await _challenges_read(db, [c for c in challenges if c.status == "pending"])
 
 
 @router.get("/duels/challenges/{challenge_id}", response_model=DuelChallengeRead)

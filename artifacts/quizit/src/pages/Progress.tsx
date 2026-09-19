@@ -1,10 +1,12 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useGetMyHistory, useGetMyProgressTrend, useGetMyTopicInsights, useListTopics } from "@workspace/api-client-react";
+import { useLocation } from "wouter";
+import { useGetMyHistory, useGetMyProgressTrend, useGetMyTopicInsights, useGetMyWeakness, useListTopics } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateBlocks";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/common/Motion";
+import { WeakSpotList, isWeakSpot } from "@/components/quiz/WeakSpotList";
 
 const GRID = "hsl(var(--border))";
 const AXIS = "hsl(var(--muted-foreground))";
@@ -18,6 +20,7 @@ const RANGE_OPTIONS = [
 ];
 
 export default function ProgressPage() {
+  const [, navigate] = useLocation();
   const [days, setDays] = useState(30);
   const [topicId, setTopicId] = useState<number | null>(null);
 
@@ -25,6 +28,8 @@ export default function ProgressPage() {
   const trendQuery = useGetMyProgressTrend({ days });
   const topicInsightsQuery = useGetMyTopicInsights({ days });
   const historyQuery = useGetMyHistory({ limit: 15, topic_id: topicId ?? undefined });
+  const weaknessQuery = useGetMyWeakness({ limit: 12 });
+  const weakSpots = (weaknessQuery.data ?? []).filter(isWeakSpot).slice(0, 6);
 
   const trendData = useMemo(
     () => (trendQuery.data ?? []).map((p) => ({ ...p, label: new Date(p.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }) })),
@@ -41,14 +46,14 @@ export default function ProgressPage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageHeader eyebrow="Progress" title="Your performance over time" description="Track history, trends and per-topic accuracy." />
+        <PageHeader title="Your progress" description="History, trends, per-topic accuracy and the weak spots to work on." />
         <div className="flex gap-1.5">
           {RANGE_OPTIONS.map((opt) => (
             <button
               key={opt.days}
               type="button"
               onClick={() => setDays(opt.days)}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-[var(--radius)] border px-3 py-1.5 text-xs font-semibold transition ${
                 days === opt.days ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -72,6 +77,25 @@ export default function ProgressPage() {
           <StatTile label="Attempts logged" value={historyQuery.data?.length ?? 0} />
         </StaggerItem>
       </StaggerGroup>
+
+      <Reveal delay={0.03}>
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <h2 className="text-sm font-semibold text-foreground">Weak spots</h2>
+          <p className="text-xs text-muted-foreground">Practice and duels lean on these automatically.</p>
+        </div>
+        {weaknessQuery.isError ? (
+          <ErrorState message="Could not load your weak spots." onRetry={() => void weaknessQuery.refetch()} />
+        ) : weaknessQuery.isPending ? (
+          <LoadingState label="Analysing your answers…" />
+        ) : weakSpots.length === 0 ? (
+          <EmptyState title="No weak spots yet" message="Answer at least three questions in a subtopic and any that need work will show up here." />
+        ) : (
+          <WeakSpotList
+            items={weakSpots}
+            onDrill={(item) => navigate(`/practice?mode=weak_topics&topic=${item.topic_id}&subtopic=${item.subtopic_id}`)}
+          />
+        )}
+      </Reveal>
 
       <Reveal delay={0.05} className="surface-panel p-5">
         <h2 className="mb-4 text-sm font-semibold text-foreground">Daily accuracy</h2>

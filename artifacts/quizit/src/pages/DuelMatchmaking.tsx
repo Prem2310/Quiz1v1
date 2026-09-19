@@ -5,6 +5,7 @@ import { Swords, X } from "lucide-react";
 import { useListTopics } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Reveal } from "@/components/common/Motion";
+import { HeadToHeadPanel } from "@/components/quiz/HeadToHeadPanel";
 import { Button } from "@/components/ui/button";
 import { initialsOf } from "@/components/layout/AppShell";
 import { createMatchmakingService } from "@/lib/realtime";
@@ -36,7 +37,7 @@ export default function DuelMatchmaking() {
         onMatchFound: (payload) => {
           setMatch(payload);
           setPhase("matched");
-          window.setTimeout(() => navigate(`/duel/${payload.duelId}`), 900);
+          window.setTimeout(() => navigate(`/duel/${payload.duelId}`), 1500);
         },
         onError: (message) => {
           setError(message);
@@ -110,6 +111,10 @@ export default function DuelMatchmaking() {
             <X className="h-4 w-4" /> Cancel
           </Button>
         </motion.div>
+      ) : null}
+
+      {phase === "matched" && match?.opponent ? (
+        <HeadToHeadPanel opponentId={match.opponent.user_id} opponentName={match.opponent.name} phase="before" />
       ) : null}
 
       {phase === "matched" && match ? (

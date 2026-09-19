@@ -31,6 +31,7 @@ app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
     description="Competitive aptitude practice and real-time quiz battles.",
+    lifespan=lifespan,
     openapi_url="/api/openapi.json",
     docs_url="/api/docs",
     redoc_url="/api/redoc",

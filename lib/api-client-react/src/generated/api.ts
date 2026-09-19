@@ -31,6 +31,8 @@ import type {
   GetMyHistoryParams,
   GetMyProgressTrendParams,
   GetMyTopicInsightsParams,
+  GetMyWeaknessParams,
+  HeadToHead,
   HealthStatus,
   LeaderboardEntry,
   ListQuestionsParams,
@@ -43,6 +45,7 @@ import type {
   QuizStart,
   SearchUsersParams,
   Subtopic,
+  SubtopicWeakness,
   Topic,
   TopicInsight,
   User,
@@ -1377,6 +1380,90 @@ export function useGetMyProgressTrend<TData = Awaited<ReturnType<typeof getMyPro
 
 
 
+export const getGetMyWeaknessUrl = (params?: GetMyWeaknessParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/analytics/me/weakness?${stringifiedParams}` : `/api/analytics/me/weakness`
+}
+
+/**
+ * @summary Subtopics the user is demonstrably weak in, strongest evidence first
+ */
+export const getMyWeakness = async (params?: GetMyWeaknessParams, options?: Parameters<typeof customFetch>[1]): Promise<SubtopicWeakness[]> => {
+
+  return customFetch<SubtopicWeakness[]>(getGetMyWeaknessUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyWeaknessQueryKey = (params?: GetMyWeaknessParams,) => {
+    return [
+    `/api/analytics/me/weakness`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMyWeaknessQueryOptions = <TData = Awaited<ReturnType<typeof getMyWeakness>>, TError = ErrorType<unknown>>(params?: GetMyWeaknessParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyWeakness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyWeaknessQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyWeakness>>> = ({ signal }) => getMyWeakness(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyWeakness>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyWeaknessQueryResult = NonNullable<Awaited<ReturnType<typeof getMyWeakness>>>
+export type GetMyWeaknessQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Subtopics the user is demonstrably weak in, strongest evidence first
+ */
+
+export function useGetMyWeakness<TData = Awaited<ReturnType<typeof getMyWeakness>>, TError = ErrorType<unknown>>(
+ params?: GetMyWeaknessParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyWeakness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyWeaknessQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetLeaderboardUrl = (params?: GetLeaderboardParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1449,6 +1536,83 @@ export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboa
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetLeaderboardQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetHeadToHeadUrl = (opponentId: number,) => {
+
+
+
+
+  return `/api/duels/head-to-head/${opponentId}`
+}
+
+/**
+ * @summary The signed-in user's duel record against one opponent
+ */
+export const getHeadToHead = async (opponentId: number, options?: Parameters<typeof customFetch>[1]): Promise<HeadToHead> => {
+
+  return customFetch<HeadToHead>(getGetHeadToHeadUrl(opponentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHeadToHeadQueryKey = (opponentId: number,) => {
+    return [
+    `/api/duels/head-to-head/${opponentId}`
+    ] as const;
+    }
+
+
+export const getGetHeadToHeadQueryOptions = <TData = Awaited<ReturnType<typeof getHeadToHead>>, TError = ErrorType<unknown>>(opponentId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadToHead>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHeadToHeadQueryKey(opponentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHeadToHead>>> = ({ signal }) => getHeadToHead(opponentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: opponentId !== null && opponentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHeadToHead>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHeadToHeadQueryResult = NonNullable<Awaited<ReturnType<typeof getHeadToHead>>>
+export type GetHeadToHeadQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary The signed-in user's duel record against one opponent
+ */
+
+export function useGetHeadToHead<TData = Awaited<ReturnType<typeof getHeadToHead>>, TError = ErrorType<unknown>>(
+ opponentId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHeadToHead>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHeadToHeadQueryOptions(opponentId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
