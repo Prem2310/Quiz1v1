@@ -10,6 +10,11 @@ from app.core.config import get_settings
 
 log = logging.getLogger(__name__)
 
+PRESENCE_KEY = "quizit:presence"
+# A signed-in tab polls the API every ~5 s while visible (see useIncomingActivity on the frontend) and stops when hidden,
+# so "no authenticated request for this long" means the player has left.
+PRESENCE_WINDOW_S = 30
+
 
 class RoomBroker:
     """Redis handle: pub/sub for rooms plus a tiny JSON cache. Every method is a no-op without Redis."""
@@ -17,6 +22,7 @@ class RoomBroker:
     def __init__(self) -> None:
         self.client: Redis | None = None
         self._local: dict[str, tuple[float, Any]] = {}  # in-process fallback so a missing/dead Redis still spares the database
+        self._presence: dict[int, float] = {}  # same idea for presence; per-process, so multi-worker counts need Redis
 
     async def connect(self) -> None:
         url = get_settings().redis_url
@@ -72,6 +78,30 @@ class RoomBroker:
         else:
             self._local[key] = (time.monotonic() + ttl, value)
         return value
+
+    async def touch_presence(self, user_id: int, now: float | None = None) -> None:
+        """Record that `user_id` was just seen. Sorted set (score = last seen), one member per player, so re-touching is a no-growth write."""
+        now = time.time() if now is None else now
+        if self.client:
+            try:
+                await self.client.zadd(PRESENCE_KEY, {str(user_id): now})
+            except Exception:
+                log.warning("Redis presence write failed for user %s", user_id)
+        else:
+            self._presence[user_id] = now
+
+    async def online_count(self, window_s: int = PRESENCE_WINDOW_S, now: float | None = None) -> int:
+        """Players seen within the last `window_s` seconds. Stale entries are dropped on the way, so the set never outgrows the active crowd."""
+        cutoff = (time.time() if now is None else now) - window_s
+        if self.client:
+            try:
+                await self.client.zremrangebyscore(PRESENCE_KEY, "-inf", cutoff)
+                return int(await self.client.zcount(PRESENCE_KEY, cutoff, "+inf"))
+            except Exception:
+                log.warning("Redis presence read failed; reporting 0 online")
+                return 0
+        self._presence = {uid: seen for uid, seen in self._presence.items() if seen >= cutoff}
+        return len(self._presence)
 
     async def invalidate(self, *keys: str) -> None:
         for key in keys:

@@ -96,7 +96,7 @@ export default function DuelMatchmaking() {
             </div>
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button size="lg" className="w-full glow-primary" onClick={start}>
+          <Button size="lg" className="w-full" onClick={start}>
             <Swords className="h-4 w-4" /> Queue up
           </Button>
         </Reveal>

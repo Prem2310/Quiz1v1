@@ -1,4 +1,4 @@
-/** Shared gameplay + realtime types for QuizIt. Auth/catalog/quiz REST types come
+/** Shared gameplay + realtime types for quiz1v1. Auth/catalog/quiz REST types come
  * from the generated client (@workspace/api-client-react) — these cover only what
  * that spec can't express: sanitised gameplay questions and WebSocket payloads. */
 

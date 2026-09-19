@@ -236,11 +236,11 @@ export default function DuelRoom() {
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
           <ConnectionIndicator state={connection} />
           <p className="hidden text-xs text-muted-foreground sm:block">Press A · B · C · D to answer</p>
-          <Link href="/arena">
-            <Button variant="ghost" size="sm" className="text-muted-foreground">
+          <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+            <Link href="/arena">
               <Flag className="h-3.5 w-3.5" /> Leave
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </footer>
     </main>
@@ -316,9 +316,9 @@ function DuelSummaryView({
         <div className="glass-panel p-8">
           <p className="text-lg font-semibold text-foreground">Your opponent left the duel</p>
           <p className="mt-2 text-sm text-muted-foreground">No rating change was applied.</p>
-          <Link href="/arena">
-            <Button className="mt-6 w-full">Back to Arena</Button>
-          </Link>
+          <Button className="mt-6 w-full" asChild>
+            <Link href="/arena">Back to Arena</Link>
+          </Button>
         </div>
       </div>
     );
@@ -362,10 +362,10 @@ function DuelSummaryView({
   }
 
   async function share() {
-    const text = draw ? "I just drew a QuizIt duel!" : won ? "I just won a QuizIt duel!" : "I just played a QuizIt duel!";
+    const text = draw ? "I just drew a quiz1v1 duel!" : won ? "I just won a quiz1v1 duel!" : "I just played a quiz1v1 duel!";
     if (navigator.share) {
       try {
-        await navigator.share({ title: "QuizIt duel", text, url: window.location.href });
+        await navigator.share({ title: "quiz1v1 duel", text, url: window.location.href });
         return;
       } catch {
         // user cancelled or share failed; fall through to clipboard
@@ -382,11 +382,11 @@ function DuelSummaryView({
   return (
     <div className="mx-auto max-w-lg">
       <div className="mb-6 flex items-center justify-between">
-        <Link href="/arena">
-          <Button variant="outline" size="icon" aria-label="Home">
+        <Button variant="outline" size="icon" aria-label="Home" asChild>
+          <Link href="/arena">
             <Home className="h-4 w-4" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <Button variant="outline" size="icon" aria-label="Share result" onClick={() => void share()}>
           <Share2 className="h-4 w-4" />
         </Button>
@@ -400,7 +400,7 @@ function DuelSummaryView({
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
           <div>
             <p className="numeric text-xs font-bold text-primary">P1</p>
-            <p className="numeric text-4xl font-black text-primary">{myScore}</p>
+            <p className="numeric text-4xl font-bold text-primary">{myScore}</p>
             <p className="mt-1 truncate text-sm font-medium text-muted-foreground">{user?.name ?? "You"}</p>
             <p className={`numeric mt-0.5 flex items-center justify-center gap-1 text-xs font-semibold ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
               ({newRating}) {delta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />} {delta >= 0 ? "+" : ""}
@@ -410,7 +410,7 @@ function DuelSummaryView({
           <p className="font-display text-lg text-muted-foreground">VS</p>
           <div>
             <p className="numeric text-xs font-bold text-secondary">P2</p>
-            <p className="numeric text-4xl font-black text-secondary">{opponentScore}</p>
+            <p className="numeric text-4xl font-bold text-secondary">{opponentScore}</p>
             <p className="mt-1 truncate text-sm font-medium text-muted-foreground">{opponent?.name ?? "Opponent"}</p>
             {opponent ? <p className="numeric mt-0.5 text-xs font-semibold text-muted-foreground">({Math.round(opponent.rating)})</p> : null}
           </div>
@@ -448,7 +448,7 @@ function DuelSummaryView({
               <Swords className="h-4 w-4" /> {rematchState === "sending" ? "Sending…" : "Rematch"}
             </Button>
           )}
-          <Button className="flex-1 glow-primary" onClick={() => navigate("/duel/matchmaking")}>
+          <Button className="flex-1" onClick={() => navigate("/duel/matchmaking")}>
             New duel
           </Button>
         </div>

@@ -4,8 +4,10 @@ import { useGetMyAnalytics, useListFriends } from "@workspace/api-client-react";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { ErrorState, LoadingState } from "@/components/common/StateBlocks";
 import { HoverCard, Reveal, StaggerGroup, StaggerItem } from "@/components/common/Motion";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { initialsOf } from "@/components/layout/AppShell";
+import { usePublicStats } from "@/hooks/usePublicStats";
 import { useAuth } from "@/stores/auth";
 
 export default function Arena() {
@@ -13,6 +15,7 @@ export default function Arena() {
   const { data, isPending, isError, refetch } = useGetMyAnalytics();
   const friendsQuery = useListFriends();
   const friends = friendsQuery.data?.slice(0, 3) ?? [];
+  const community = usePublicStats().data;
 
   return (
     <div className="space-y-8">
@@ -22,8 +25,24 @@ export default function Arena() {
             Welcome back, {user?.name?.split(" ")[0] ?? "player"}
           </h1>
           <p className="mt-2 max-w-md text-sm text-muted-foreground">Pick your match — practice solo, or queue for a live duel.</p>
+          {/* Hidden until the count arrives (or if it fails); min-h keeps the header from jumping when it does. */}
+          <p className="numeric mt-3 flex min-h-5 flex-wrap items-center gap-x-5 gap-y-1">
+            {community ? (
+              <>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
+                  <AnimatedNumber value={community.online_now} className="text-sm font-bold text-foreground" />
+                  <span className="label-micro">online now</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <AnimatedNumber value={community.registered_users} className="text-sm font-bold text-foreground" />
+                  <span className="label-micro">players</span>
+                </span>
+              </>
+            ) : null}
+          </p>
         </div>
-        <div className="numeric flex divide-x divide-border overflow-hidden rounded-[var(--radius)] border border-border">
+        <div className="numeric grid w-full auto-cols-fr grid-flow-col divide-x divide-border overflow-hidden rounded-[var(--radius)] border border-border sm:flex sm:w-auto">
           <HudChip icon={Trophy} value={Math.round(user?.user_rating ?? 1000)} label={user?.league ?? "Bronze"} tone="text-primary" />
           {data?.rank != null ? (
             <Link href="/leaderboard" className="contents">
@@ -32,7 +51,7 @@ export default function Arena() {
           ) : null}
           <HudChip icon={Flame} value={user?.current_streak ?? 0} label="streak" tone="text-warning" />
           <HudChip icon={Zap} value={user?.total_xp ?? 0} label="xp" tone="text-highlight" />
-          <HudChip icon={BarChart3} value={data?.accuracy ?? 0} label="acc%" tone="text-secondary" />
+          <HudChip icon={BarChart3} value={isPending ? null : (data?.accuracy ?? 0)} label="acc%" tone="text-secondary" />
         </div>
       </header>
 
@@ -51,11 +70,9 @@ export default function Arena() {
               <p className="text-xs text-muted-foreground">Spaced repetition keeps your weak spots from coming back on test day.</p>
             </div>
           </div>
-          <Link href="/practice?mode=weak_topics">
-            <Button variant="outline" size="sm">
-              Review now
-            </Button>
-          </Link>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/practice?mode=weak_topics">Review now</Link>
+          </Button>
         </Reveal>
       ) : null}
 
@@ -79,7 +96,7 @@ export default function Arena() {
               corner="P2"
               icon={Target}
               title="Practice"
-              body="Drill any topic solo, or let QuizIt pick questions you've missed before."
+              body="Drill any topic solo, or let quiz1v1 pick questions you've missed before."
               cta="Start practicing"
               href="/practice"
             />
@@ -135,14 +152,18 @@ function HudChip({
   tone,
 }: {
   icon: typeof Trophy;
-  value: number;
+  value: number | null;
   label: string;
   tone: string;
 }) {
   return (
-    <div className="flex items-center gap-2 bg-surface px-3 py-2">
-      <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
-      <AnimatedNumber value={value} className={`text-sm font-bold ${tone}`} />
+    <div className="flex min-w-0 flex-col items-start gap-0.5 bg-surface px-2.5 py-2 sm:flex-row sm:items-center sm:gap-2 sm:px-3">
+      <Icon className={`hidden h-3.5 w-3.5 shrink-0 sm:block ${tone}`} />
+      {value === null ? (
+        <span className={`text-sm font-bold ${tone}`} aria-label="loading">–</span>
+      ) : (
+        <AnimatedNumber value={value} className={`text-sm font-bold ${tone}`} />
+      )}
       <span className="label-micro">{label}</span>
     </div>
   );
@@ -186,9 +207,7 @@ function ModeTile({
           <h3 className="mt-4 font-display text-2xl uppercase tracking-wide text-foreground">{title}</h3>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">{body}</p>
         </div>
-        <Button className="mt-6 w-fit" variant={featured ? "default" : "outline"}>
-          {cta}
-        </Button>
+        <span className={cn(buttonVariants({ variant: featured ? "default" : "outline" }), "mt-6 w-fit")}>{cta}</span>
       </div>
     </Link>
   );

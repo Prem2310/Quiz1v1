@@ -6,10 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface TopicInsight {
-  topic_id: number;
-  topic_name: string;
-  total_answered: number;
-  correct: number;
-  accuracy: number;
+export interface PublicStats {
+  registered_users: number;
+  online_now: number;
 }

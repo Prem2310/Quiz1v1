@@ -1,4 +1,4 @@
-# QuizIt Backend
+# quiz1v1 Backend
 
 FastAPI backend for competitive aptitude practice, personalized quiz sessions, analytics, and real-time quiz rooms.
 
@@ -21,7 +21,7 @@ FastAPI backend for competitive aptitude practice, personalized quiz sessions, a
 ## Where things live
 
 - `artifacts/api-server/app/main.py` — FastAPI application and lifecycle
-- `artifacts/api-server/app/models.py` — SQLAlchemy mapping for the existing QuizIt tables
+- `artifacts/api-server/app/models.py` — SQLAlchemy mapping for the existing quiz1v1 tables
 - `artifacts/api-server/app/routers/` — auth, catalog, quizzes, analytics, health, and room routes
 - `artifacts/api-server/alembic/versions/0001_quizit_core.py` — initial schema migration for a fresh database
 
@@ -34,7 +34,7 @@ FastAPI backend for competitive aptitude practice, personalized quiz sessions, a
 
 ## Product
 
-QuizIt supports account registration/login, topic and question discovery, practice and competitive quiz creation, answer submission, scoring, personal analytics, leaderboards, and authenticated WebSocket rooms.
+quiz1v1 supports account registration/login, topic and question discovery, practice and competitive quiz creation, answer submission, scoring, personal analytics, leaderboards, and authenticated WebSocket rooms.
 
 ## User preferences
 

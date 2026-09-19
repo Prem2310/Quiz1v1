@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = Field(default="QuizIt API", validation_alias="APP_NAME")
+    app_name: str = Field(default="quiz1v1 API", validation_alias="APP_NAME")
     environment: str = Field(default="development", validation_alias="ENVIRONMENT")
 
     # Local SQLite fallback

@@ -14,10 +14,11 @@ import {
   Zap,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { Logo, LogoMark } from "@/components/brand/Logo";
+import { Logo, LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { NotificationsMenu } from "@/components/social/NotificationsMenu";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/stores/auth";
 
@@ -55,9 +56,10 @@ function NavItem({ to, label, icon: Icon, active }: { to: NavPath; label: string
   return (
     <Link
       href={to}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "relative flex items-center gap-3 border-l-2 px-3 py-2 font-sans text-sm font-bold uppercase tracking-wide transition-colors",
-        active ? "border-primary bg-primary/10 text-primary" : "border-transparent text-muted-foreground hover:border-border hover:bg-surface hover:text-foreground",
+        "relative flex items-center gap-3 border px-3 py-2 font-sans text-sm font-bold uppercase tracking-wide transition-colors",
+        active ? "border-primary/50 bg-primary/10 text-primary" : "border-transparent text-muted-foreground hover:border-border hover:bg-surface hover:text-foreground",
       )}
     >
       <Icon className="relative h-4 w-4 shrink-0" />
@@ -70,13 +72,21 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
   const [pathname] = useLocation();
   const { user, logout } = useAuth();
   const displayName = user?.name || user?.username || "Player";
+  const section = [...PRIMARY_NAV, ...SECONDARY_NAV].find((item) => pathname.startsWith(item.to))?.label ?? (pathname.startsWith("/duel") ? "Duel" : null);
+  usePageMeta(section ? `${section} · quiz1v1` : "quiz1v1", { noindex: true }); // signed-in screens are private, so keep them out of search
 
   if (bare) {
-    return <main className="min-h-screen bg-background">{children}</main>;
+    return <main className="min-h-dvh bg-background">{children}</main>;
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
+      <a
+        href="#main"
+        className="sr-only z-50 border-2 border-primary bg-background px-4 py-2 font-bold uppercase text-primary focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+      >
+        Skip to content
+      </a>
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-surface-2 lg:flex">
         <div className="flex items-center justify-between px-5 py-5">
@@ -116,12 +126,10 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/90 px-4 py-3 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3 lg:hidden">
         <Link href="/arena" className="flex items-center gap-2">
           <LogoMark className="h-6 w-6" />
-          <span className="font-display text-base font-bold tracking-[0.16em]">
-            QUIZ<span className="text-primary">IT</span>
-          </span>
+          <Wordmark className="text-base tracking-[0.16em]" />
         </Link>
         <div className="flex shrink-0 items-center gap-3">
           <span className="flex items-center gap-1 text-xs font-semibold text-warning">
@@ -141,14 +149,14 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
         </div>
       </header>
 
-      <main className="min-h-screen pb-24 lg:ml-60 lg:pb-8">
+      <main id="main" tabIndex={-1} className="min-h-dvh pb-24 outline-none lg:ml-60 lg:pb-8">
         <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 lg:py-8">{children}</div>
       </main>
 
       {/* Mobile bottom navigation */}
       <nav
         aria-label="Primary"
-        className="safe-bottom fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-surface-2/95 pt-1.5 backdrop-blur lg:hidden"
+        className="safe-bottom fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-surface-2 pt-1.5 lg:hidden"
       >
         {MOBILE_NAV.map(({ to, label, icon: Icon }) => {
           const active = pathname.startsWith(to);
@@ -156,6 +164,7 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
             <Link
               key={to}
               href={to}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex min-h-[48px] flex-col items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wider transition-colors",
                 active ? "text-primary" : "text-muted-foreground",

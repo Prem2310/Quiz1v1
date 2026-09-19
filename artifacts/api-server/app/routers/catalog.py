@@ -1,16 +1,27 @@
 from fastapi import APIRouter, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.dependencies import DbSession
-from app.models import Question, Subtopic, Topic
-from app.redis_client import room_broker
-from app.schemas import QuestionRead, SubtopicRead, TopicRead
+from app.models import Question, Subtopic, Topic, UserData
+from app.redis_client import PRESENCE_WINDOW_S, room_broker
+from app.schemas import PublicStats, QuestionRead, SubtopicRead, TopicRead
 
 router = APIRouter(tags=["catalog"])
 
 
 CATALOG_TTL = 300  # topics/subtopics change only on import; every practice-page load asks for them
+
+
+@router.get("/stats/public", response_model=PublicStats)
+async def public_stats(db: DbSession) -> dict:
+    """Landing-page counts. Registered players change slowly (cached); "online now" is read live from presence."""
+
+    async def load_registered() -> int:
+        return await db.scalar(select(func.count(UserData.id)).where(UserData.is_active.is_(True))) or 0
+
+    registered = await room_broker.cached("registered-users", CATALOG_TTL, load_registered)
+    return {"registered_users": registered, "online_now": await room_broker.online_count(PRESENCE_WINDOW_S)}
 
 
 @router.get("/topics", response_model=list[TopicRead])

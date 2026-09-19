@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { useAuth } from "@/stores/auth";
 
 export default function Signup() {
+  usePageMeta("Sign up free · quiz1v1");
   const { signup, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [form, setForm] = useState({ name: "", email: "", username: "", password: "", college_name: "" });
@@ -35,11 +37,10 @@ export default function Signup() {
         password: form.password,
         college_name: form.college_name || undefined,
       });
-      toast({ title: "Account created", description: `Welcome to QuizIt, ${user.name.split(" ")[0]}!` });
+      toast({ title: "Account created", description: `Welcome to quiz1v1, ${user.name.split(" ")[0]}.` });
     } catch (err) {
       const message = getErrorMessage(err, "Could not create your account. Please try again.");
       setError(message);
-      toast({ title: "Sign up failed", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -47,7 +48,6 @@ export default function Signup() {
 
   return (
     <AuthLayout
-      eyebrow="Join QuizIt"
       title="Create your account"
       subtitle="Practice for free, then challenge someone to a duel."
       footer={
@@ -90,8 +90,12 @@ export default function Signup() {
             minLength={8}
           />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" className="w-full glow-primary" disabled={submitting}>
+        {error ? (
+          <p role="alert" className="border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" className="w-full" disabled={submitting}>
           {submitting ? "Creating account…" : "Create account"}
         </Button>
       </form>

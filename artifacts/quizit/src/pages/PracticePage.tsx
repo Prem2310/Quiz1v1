@@ -237,7 +237,7 @@ export default function PracticePage() {
   if (phase === "result" && result) {
     return (
       <div className="mx-auto max-w-3xl space-y-6">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel glow-primary p-8 text-center">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-8 text-center">
           <p className="font-display text-2xl uppercase tracking-wide text-foreground">Session complete</p>
           <AnimatedNumber value={result.accuracy} suffix="%" decimals={0} className="numeric mt-2 block text-5xl font-bold text-primary" />
           <p className="mt-1 text-sm text-muted-foreground">accuracy</p>
@@ -266,11 +266,9 @@ export default function PracticePage() {
             <Button className="flex-1" variant={result.total_incorrect > 0 ? "outline" : "default"} onClick={reset}>
               <RotateCcw className="h-4 w-4" /> Practice again
             </Button>
-            <Link href="/arena" className="flex-1">
-              <Button variant="outline" className="w-full">
-                Back to Arena
-              </Button>
-            </Link>
+            <Button variant="outline" className="flex-1" asChild>
+              <Link href="/arena">Back to Arena</Link>
+            </Button>
           </div>
         </motion.div>
 
@@ -302,7 +300,7 @@ export default function PracticePage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <PageHeader title="Choose what to drill" description="Pick a scope and QuizIt builds the session: what you missed first, then new questions from your weaker areas." />
+        <PageHeader title="Choose what to drill" description="Pick a scope and quiz1v1 builds the session: what you missed first, then new questions from your weaker areas." />
       </Reveal>
 
       <Reveal delay={0.05}>
@@ -435,7 +433,7 @@ export default function PracticePage() {
       </Reveal>
 
       <Reveal delay={0.15} className="flex flex-wrap items-center gap-4">
-        <Button size="lg" className="w-full glow-primary sm:w-auto" onClick={() => void handleStart()} disabled={createQuiz.isPending || startQuiz.isPending}>
+        <Button size="lg" className="w-full sm:w-auto" onClick={() => void handleStart()} disabled={createQuiz.isPending || startQuiz.isPending}>
           {createQuiz.isPending || startQuiz.isPending ? "Preparing…" : "Start session"}
         </Button>
         <p className="numeric text-xs text-muted-foreground">

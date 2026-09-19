@@ -1,6 +1,6 @@
-# QuizIt API
+# quiz1v1 API
 
-FastAPI backend for QuizIt, a competitive aptitude practice platform.
+FastAPI backend for quiz1v1, a competitive aptitude practice platform.
 
 ## Run
 

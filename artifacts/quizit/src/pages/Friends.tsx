@@ -39,13 +39,13 @@ export default function Friends() {
 
   return (
     <div className="space-y-8">
-      <PageHeader eyebrow="Social" title="Friends" description="Add classmates, then challenge them to a custom duel." />
+      <PageHeader title="Friends" description="Add classmates, then challenge them to a custom duel." />
 
       <Reveal>
         <p className="label-micro mb-2">Find friends</p>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by username" className="pl-9" />
+          <Input type="search" aria-label="Search players by username" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by username" className="pl-9" />
         </div>
         {debouncedQuery.trim() ? (
           <div className="surface-panel mt-3 divide-y divide-border">
@@ -268,7 +268,7 @@ function ChallengeDialog({ opponent, onClose }: { opponent: UserSummary; onClose
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button className="glow-primary" disabled={createChallenge.isPending} onClick={() => void send()}>
+              <Button disabled={createChallenge.isPending} onClick={() => void send()}>
                 <Swords className="h-4 w-4" /> Send challenge
               </Button>
             </DialogFooter>

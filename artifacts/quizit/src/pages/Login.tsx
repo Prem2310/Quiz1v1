@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { useAuth } from "@/stores/auth";
 
 export default function Login() {
+  usePageMeta("Log in · quiz1v1");
   const { login, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [emailOrUsername, setEmailOrUsername] = useState("");
@@ -28,11 +30,10 @@ export default function Login() {
     setSubmitting(true);
     try {
       const user = await login({ email_or_username: emailOrUsername, password });
-      toast({ title: "Logged in", description: `Welcome back, ${user.name.split(" ")[0]}!` });
+      toast({ title: "Logged in", description: `Welcome back, ${user.name.split(" ")[0]}.` });
     } catch (err) {
       const message = getErrorMessage(err, "Could not sign in. Check your details and try again.");
       setError(message);
-      toast({ title: "Login failed", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -40,8 +41,7 @@ export default function Login() {
 
   return (
     <AuthLayout
-      eyebrow="Welcome back"
-      title="Log in to QuizIt"
+      title="Log in to quiz1v1"
       subtitle="Pick up your streak and jump back into the arena."
       footer={
         <>
@@ -74,8 +74,12 @@ export default function Login() {
             required
           />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button type="submit" className="w-full glow-primary" disabled={submitting}>
+        {error ? (
+          <p role="alert" className="border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" className="w-full" disabled={submitting}>
           {submitting ? "Signing in…" : "Log in"}
         </Button>
       </form>

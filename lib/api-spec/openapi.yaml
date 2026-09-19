@@ -3,10 +3,10 @@ info:
   # Keep this title stable because it controls generated import paths.
   title: Api
   version: 1.0.0
-  description: QuizIt competitive aptitude practice API
+  description: quiz1v1 competitive aptitude practice API
 servers:
   - url: /api
-    description: QuizIt API
+    description: quiz1v1 API
 tags:
   - name: health
   - name: auth
@@ -32,7 +32,7 @@ paths:
     post:
       operationId: register
       tags: [auth]
-      summary: Create a QuizIt account
+      summary: Create a quiz1v1 account
       requestBody:
         required: true
         content:
@@ -50,7 +50,7 @@ paths:
     post:
       operationId: login
       tags: [auth]
-      summary: Sign in to QuizIt
+      summary: Sign in to quiz1v1
       requestBody:
         required: true
         content:
@@ -101,6 +101,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+  /stats/public:
+    get:
+      operationId: getPublicStats
+      tags: [catalog]
+      summary: Aggregate player counts (registered, online right now)
+      responses:
+        "200":
+          description: Public stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicStats"
   /topics:
     get:
       operationId: listTopics
@@ -695,6 +707,12 @@ components:
       schema:
         type: integer
   schemas:
+    PublicStats:
+      type: object
+      required: [registered_users, online_now]
+      properties:
+        registered_users: { type: integer }
+        online_now: { type: integer }
     HealthStatus:
       type: object
       required: [status, database, redis]

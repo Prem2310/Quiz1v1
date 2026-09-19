@@ -1,1 +1,1 @@
-"""QuizIt FastAPI application."""
+"""quiz1v1 FastAPI application."""

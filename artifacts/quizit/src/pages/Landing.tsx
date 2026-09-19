@@ -5,6 +5,7 @@ import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { useAuth } from "@/stores/auth";
+import { usePublicStats } from "@/hooks/usePublicStats";
 
 const MOVES = [
   {
@@ -15,7 +16,7 @@ const MOVES = [
   {
     icon: Target,
     title: "Weak-topic drills",
-    body: "Every miss is tracked. QuizIt resurfaces the questions you got wrong sooner, so you actually fix your weak spots.",
+    body: "Every miss is tracked, and missed questions come back sooner, so you actually fix your weak spots.",
   },
   {
     icon: Trophy,
@@ -29,30 +30,87 @@ const MOVES = [
   },
 ];
 
+// A small number reads as an empty platform, so live player counts only show once they help.
+const MIN_PLAYERS_SHOWN = 50;
+const MIN_ONLINE_SHOWN = 3;
+
+type Stat = { value: number; label: string; suffix?: string; live?: boolean };
+
+const TOPICS = [
+  { name: "Quantitative aptitude", body: "Percentages, ratios, time and work, averages and the arithmetic that placement tests lean on." },
+  { name: "Data interpretation", body: "Tables, bar charts, line graphs and pie charts, read fast and answered accurately." },
+  { name: "Verbal ability", body: "Grammar, vocabulary, synonyms, antonyms and sentence correction." },
+  { name: "Logical reasoning", body: "Series, arrangements, syllogisms and puzzles that reward a clear head." },
+  { name: "Verbal reasoning", body: "Analogies, classification and statement-based reasoning in words." },
+  { name: "Non-verbal reasoning", body: "Figure series, patterns and analogies with no words to lean on." },
+];
+
+// Rendered on the page and mirrored into FAQPage structured data below, so the markup always matches what people can read.
+const FAQ = [
+  {
+    q: "What is quiz1v1?",
+    a: "quiz1v1 is a free aptitude practice platform for campus placements and competitive exams such as banking and SSC. Drill topic-based questions on your own, then challenge other students to live 1v1 duels with a rating, leagues and a leaderboard.",
+  },
+  { q: "Is quiz1v1 free?", a: "Yes. It is free to use, with no credit card. Create an account and start practising straight away." },
+  {
+    q: "Which topics can I practise?",
+    a: "Quantitative aptitude, data interpretation, verbal ability, logical reasoning, verbal reasoning and non-verbal reasoning. Each has its own accuracy tracking on your progress page.",
+  },
+  {
+    q: "How does a 1v1 duel work?",
+    a: "Queue up and you are matched with a student near your rating. You both answer the same timed questions live, the fastest correct answers win the points, and your rating moves with the result.",
+  },
+  {
+    q: "How does quiz1v1 help with weak topics?",
+    a: "Every miss is tracked. Missed questions come back sooner, until you answer them right, and your progress page shows accuracy topic by topic.",
+  },
+  { q: "Where do the questions come from?", a: "The question bank is sourced from IndiaBix. All credit for question content belongs to IndiaBix." },
+  {
+    q: "Can I compete with my friends or my college?",
+    a: "Yes. Add friends and challenge them to a duel directly, and compare yourself on the leaderboard globally or against your own college.",
+  },
+];
+
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map(({ q, a }) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
+};
+
 export default function Landing() {
   const { isAuthenticated } = useAuth();
+  const statsQuery = usePublicStats();
+  const live = statsQuery.data;
+
+  const liveStats: Stat[] = [];
+  if (live && live.registered_users >= MIN_PLAYERS_SHOWN) liveStats.push({ value: live.registered_users, label: "Players" });
+  if (live && live.online_now >= MIN_ONLINE_SHOWN) liveStats.push({ value: live.online_now, label: "Online now", live: true });
+  const stats: Stat[] = [
+    { value: 13600, label: "Questions", suffix: "+" },
+    ...liveStats,
+    { value: 6, label: "Topic areas" },
+    ...(liveStats.length ? [] : [{ value: 1000, label: "Starting rating" }]),
+  ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
         <Link href="/" aria-label="Go to homepage">
           <Logo />
         </Link>
         <nav className="flex items-center gap-2">
           {isAuthenticated ? (
-            <Link href="/arena">
-              <Button size="sm">Go to Arena</Button>
-            </Link>
+            <Button size="sm" asChild>
+              <Link href="/arena">Go to Arena</Link>
+            </Button>
           ) : (
             <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm">Sign up free</Button>
-              </Link>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">Log in</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/signup">Sign up free</Link>
+              </Button>
             </>
           )}
         </nav>
@@ -78,8 +136,7 @@ export default function Landing() {
                 transition={{ duration: 0.45, delay: 0.08 }}
                 className="mt-5 max-w-md text-balance text-base text-muted-foreground sm:text-lg"
               >
-                Thousands of real placement-test questions across quant, verbal and reasoning. Drill your weak
-                topics on repeat, then prove it in a live 1v1 duel.
+                quiz1v1 puts thousands of real placement-test questions across quant, verbal and reasoning in one place. Drill your weak topics on repeat, then prove it in a live 1v1 duel.
               </motion.p>
               <motion.div
                 initial={{ opacity: 0, y: 14 }}
@@ -87,28 +144,36 @@ export default function Landing() {
                 transition={{ duration: 0.45, delay: 0.14 }}
                 className="mt-8 flex flex-wrap items-center gap-3"
               >
-                <Link href={isAuthenticated ? "/practice" : "/signup"}>
-                  <Button size="lg">Start practicing</Button>
-                </Link>
-                <Link href={isAuthenticated ? "/duel/matchmaking" : "/signup"}>
-                  <Button size="lg" variant="outline">
+                <Button size="lg" asChild>
+                  <Link href={isAuthenticated ? "/practice" : "/signup"}>Start practicing</Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href={isAuthenticated ? "/duel/matchmaking" : "/signup"}>
                     <Swords className="h-4 w-4" /> Find a duel
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </motion.div>
 
-              <div className="numeric mt-10 flex divide-x divide-border border border-border">
-                {[
-                  { value: 13600, label: "Questions", suffix: "+" },
-                  { value: 6, label: "Topic areas", suffix: "" },
-                  { value: 1000, label: "Starting rating", suffix: "" },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex-1 bg-surface px-4 py-3">
-                    <AnimatedNumber value={stat.value} suffix={stat.suffix} className="block text-xl font-bold text-foreground sm:text-2xl" />
-                    <p className="label-micro mt-1">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
+              {/* Held back until the stats request settles so the strip never swaps chips under the reader. */}
+              {statsQuery.isPending ? (
+                <div className="mt-10 min-h-[5.625rem] sm:min-h-[4.75rem] border border-border bg-surface" aria-hidden="true" />
+              ) : (
+                <div
+                  className={`numeric mt-10 grid min-h-[5.625rem] sm:min-h-[4.75rem] gap-px border border-border bg-border ${
+                    stats.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"
+                  }`}
+                >
+                  {stats.map((stat) => (
+                    <div key={stat.label} className="bg-surface px-4 py-3">
+                      <AnimatedNumber value={stat.value} suffix={stat.suffix} className="block text-xl font-bold text-foreground sm:text-2xl" />
+                      <p className="label-micro mt-1 flex items-center gap-1.5">
+                        {stat.live ? <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" /> : null}
+                        {stat.label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <motion.div
@@ -121,13 +186,13 @@ export default function Landing() {
               <div className="mt-4 flex items-center justify-between gap-3">
                 <div className="flex-1 border-2 border-primary bg-card p-4 text-center">
                   <p className="numeric text-xs font-bold text-primary">P1</p>
-                  <p className="numeric mt-2 text-3xl font-black text-foreground">7</p>
+                  <p className="numeric mt-2 text-3xl font-bold text-foreground">7</p>
                   <p className="mt-1 truncate text-xs text-muted-foreground">You</p>
                 </div>
                 <p className="font-display text-2xl text-muted-foreground">VS</p>
                 <div className="flex-1 border-2 border-secondary bg-card p-4 text-center">
                   <p className="numeric text-xs font-bold text-secondary">P2</p>
-                  <p className="numeric mt-2 text-3xl font-black text-foreground">6</p>
+                  <p className="numeric mt-2 text-3xl font-bold text-foreground">6</p>
                   <p className="mt-1 truncate text-xs text-muted-foreground">Opponent</p>
                 </div>
               </div>
@@ -168,6 +233,43 @@ export default function Landing() {
           </div>
         </section>
 
+        <section aria-labelledby="topics-heading" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+          <h2 id="topics-heading" className="font-display text-2xl uppercase tracking-wide text-foreground sm:text-3xl">
+            What you can practise
+          </h2>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+            Six topic areas from the IndiaBix question bank, each with its own accuracy tracking, so you can see which one is holding your score back.
+          </p>
+          <div className="mt-5 grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            {TOPICS.map((topic) => (
+              <div key={topic.name} className="bg-surface p-5">
+                <h3 className="font-display text-base uppercase tracking-wide text-foreground">{topic.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{topic.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section aria-labelledby="faq-heading" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+            <div>
+              <h2 id="faq-heading" className="font-display text-2xl uppercase tracking-wide text-foreground sm:text-3xl">
+                Questions, answered
+              </h2>
+              <p className="mt-2 max-w-xs text-sm text-muted-foreground">Everything to know before your first duel.</p>
+            </div>
+            <div className="divide-y divide-border border border-border">
+              {FAQ.map((item) => (
+                <div key={item.q} className="bg-surface p-5">
+                  <h3 className="font-display text-base uppercase tracking-wide text-foreground">{item.q}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{item.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
+        </section>
+
         <section className="px-4 pb-24 sm:px-6">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 border-2 border-primary bg-primary/10 p-10 text-center">
             <Flame className="h-8 w-8 text-warning" />
@@ -177,9 +279,11 @@ export default function Landing() {
             <p className="max-w-md text-sm text-muted-foreground">
               Free to use. No credit card. Just questions, a rating, and people to beat.
             </p>
-            <Link href={isAuthenticated ? "/arena" : "/signup"}>
-              <Button size="lg">{isAuthenticated ? "Enter the arena" : "Create your free account"}</Button>
-            </Link>
+            <Button size="lg" asChild>
+              <Link href={isAuthenticated ? "/arena" : "/signup"}>
+                {isAuthenticated ? "Enter the arena" : "Create your free account"}
+              </Link>
+            </Button>
           </div>
         </section>
       </main>
@@ -199,7 +303,15 @@ export default function Landing() {
             </a>
             . All credit for question content belongs to IndiaBix.
           </p>
-          <p>© {new Date().getFullYear()} QuizIt</p>
+          <nav aria-label="Footer" className="flex items-center gap-4">
+            <Link href="/signup" className="hover:text-foreground">
+              Sign up
+            </Link>
+            <Link href="/login" className="hover:text-foreground">
+              Log in
+            </Link>
+            <span>© {new Date().getFullYear()} quiz1v1</span>
+          </nav>
         </div>
       </footer>
     </div>

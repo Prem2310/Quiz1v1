@@ -360,7 +360,7 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  // QuizIt is cookie-session authenticated (HTTP-only `access_token`); every
+  // quiz1v1 is cookie-session authenticated (HTTP-only `access_token`); every
   // request must carry credentials, including cross-port dev requests.
   const response = await fetch(input, { credentials: "include", ...init, method, headers });
 

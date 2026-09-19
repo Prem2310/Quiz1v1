@@ -1,13 +1,24 @@
 import { cn } from "@/lib/utils";
 
-/** QuizIt versus-mark — a split shield, P1 cyan facing P2 coral across a hard seam. */
+/** quiz1v1 icon: P1 cyan and P2 coral chevrons facing off over two health bars. Same drawing as public/favicon.svg (which needs literal colors). */
 export function LogoMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" aria-hidden="true" className={cn("h-7 w-7", className)}>
-      <path d="M16 2 L29 8 V18 C29 24.5 23.5 29 16 30 C8.5 29 3 24.5 3 18 V8 Z" fill="var(--color-surface-2)" stroke="var(--color-border)" strokeWidth="1.5" />
-      <path d="M16 4.3 L16 27.6 C10.5 26.5 5.3 22.6 5.3 17.4 V9.1 Z" fill="var(--color-primary)" />
-      <path d="M16 4.3 L16 27.6 C21.5 26.5 26.7 22.6 26.7 17.4 V9.1 Z" fill="var(--color-secondary)" />
+    <svg viewBox="0 0 64 64" aria-hidden="true" className={cn("h-7 w-7", className)}>
+      <rect x="1" y="1" width="62" height="62" rx="13" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="2" />
+      <path d="M8 13h11l10 16-10 16H8l10-16z" fill="var(--color-primary)" />
+      <path d="M56 13H45L35 29l10 16h11L46 29z" fill="var(--color-secondary)" />
+      <rect x="8" y="50" width="22" height="4" fill="var(--color-primary)" />
+      <rect x="34" y="50" width="22" height="4" fill="var(--color-secondary)" />
     </svg>
+  );
+}
+
+/** QUIZ1V1: "1V1" is one blue (P1 cyan) block, the way "IT" was in the old wordmark. */
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn("font-display uppercase tracking-[0.1em] text-foreground", className)}>
+      QUIZ<span className="text-primary">1V1</span>
+    </span>
   );
 }
 
@@ -15,11 +26,7 @@ export function Logo({ className, compact = false }: { className?: string; compa
   return (
     <span className={cn("flex items-center gap-2", className)}>
       <LogoMark />
-      {!compact && (
-        <span className="font-display text-lg uppercase tracking-[0.1em] text-foreground">
-          QUIZ<span className="text-primary">IT</span>
-        </span>
-      )}
+      {!compact && <Wordmark className="text-lg" />}
     </span>
   );
 }
