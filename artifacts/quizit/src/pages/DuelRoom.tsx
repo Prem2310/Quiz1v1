@@ -8,7 +8,9 @@ import {
   getCreateChallengeMutationOptions,
   getGetChallengeQueryKey,
   getGetCurrentUserQueryKey,
+  getGetHeadToHeadQueryKey,
   getGetMyAnalyticsQueryKey,
+  getGetMyWeaknessQueryKey,
   useGetChallenge,
   useGetDuel,
 } from "@workspace/api-client-react";
@@ -17,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { ConnectionIndicator, LoadingState } from "@/components/common/StateBlocks";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { QuestionPanel } from "@/components/quiz/QuestionPanel";
+import { HeadToHeadPanel } from "@/components/quiz/HeadToHeadPanel";
 import { Countdown } from "@/components/quiz/Countdown";
 import { CircularTimer } from "@/components/quiz/CircularTimer";
 import { DisplayText3D } from "@/components/brand/DisplayText3D";
@@ -60,6 +63,7 @@ export default function DuelRoom() {
   const questionRef = useRef<Question | null>(null);
   const selectedRef = useRef<OptionKey | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const opponentIdRef = useRef(0);
   questionRef.current = question;
   selectedRef.current = selected;
 
@@ -71,9 +75,13 @@ export default function DuelRoom() {
     return summary.player1.user_id === user.id ? summary.player2 : summary.player1;
   }, [summaryQuery.data, user]);
 
+  opponentIdRef.current = opponent?.user_id ?? 0;
+
   useEffect(() => {
     const summary = summaryQuery.data;
-    if (!summary || phase !== "connecting" || !user) return;
+    // "gone" is included: for an already-finished duel the socket closes instantly and would otherwise
+    // win the race against this (slower) REST summary, wrongly reporting "your opponent left".
+    if (!summary || (phase !== "connecting" && phase !== "gone") || !user) return;
     if (summary.status === "completed") {
       const isPlayer1 = summary.player1.user_id === user.id;
       const myScore = isPlayer1 ? summary.player1_score : summary.player2_score;
@@ -124,6 +132,9 @@ export default function DuelRoom() {
           setPhase("finished");
           void queryClient.invalidateQueries({ queryKey: getGetMyAnalyticsQueryKey() });
           void queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+          // The record and the weak-topic model both just changed (the duel's answers were graded server-side).
+          void queryClient.invalidateQueries({ queryKey: getGetHeadToHeadQueryKey(opponentIdRef.current) });
+          void queryClient.invalidateQueries({ queryKey: getGetMyWeaknessQueryKey() });
         } else if (message.type === "opponent_left") {
           setPhase("gone");
         }
@@ -178,13 +189,24 @@ export default function DuelRoom() {
     <main className="flex min-h-[75vh] flex-col">
       {showCountdown ? <Countdown onDone={() => setShowCountdown(false)} /> : null}
 
-      <header className="pb-3">
-        <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-          <PlayerBar name={user?.name || "You"} score={myScore} />
-          <CircularTimer secondsLeft={secondsLeft} total={timeLimit} size={48} />
-          <PlayerBar name={opponent?.name ?? "Opponent"} score={opponentScore} align="right" />
+      <header
+        className="border-b border-border pb-3"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, hsl(var(--primary) / 0.08), transparent 45%, transparent 55%, hsl(var(--secondary) / 0.08))",
+        }}
+      >
+        <div className="mx-auto grid max-w-3xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 pt-3">
+          <PlayerBar corner="P1" name={user?.name || "You"} score={myScore} />
+          <div className="relative flex shrink-0 items-center justify-center">
+            <span className="font-display pointer-events-none absolute text-[10px] tracking-widest text-muted-foreground/70" style={{ top: -14 }}>
+              VS
+            </span>
+            <CircularTimer secondsLeft={secondsLeft} total={timeLimit} size={48} />
+          </div>
+          <PlayerBar corner="P2" name={opponent?.name ?? "Opponent"} score={opponentScore} align="right" />
         </div>
-        <div className="mx-auto mt-3 max-w-3xl">
+        <div className="mx-auto mt-3 max-w-3xl px-4">
           <Progress value={total > 0 ? ((index + 1) / total) * 100 : 0} className="h-1" />
           <p className="numeric mt-1.5 text-center text-[11px] text-muted-foreground">
             Question {index + 1}/{total}
@@ -225,14 +247,29 @@ export default function DuelRoom() {
   );
 }
 
-function PlayerBar({ name, score, align = "left" }: { name: string; score: number; align?: "left" | "right" }) {
+function PlayerBar({
+  corner,
+  name,
+  score,
+  align = "left",
+}: {
+  corner: "P1" | "P2";
+  name: string;
+  score: number;
+  align?: "left" | "right";
+}) {
+  const color = corner === "P1" ? "text-primary" : "text-secondary";
+  const border = corner === "P1" ? "border-primary" : "border-secondary";
   return (
-    <div className={`flex min-w-0 items-center gap-2 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-card text-[10px] font-bold text-primary">
+    <div className={`flex min-w-0 items-center gap-2.5 ${align === "right" ? "flex-row-reverse text-right" : ""}`}>
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[calc(var(--radius)-4px)] border-2 bg-card text-xs font-bold sm:h-12 sm:w-12 ${border} ${color}`}>
         {initialsOf(name)}
       </div>
-      <p className="min-w-0 truncate text-xs font-semibold sm:text-sm">{name}</p>
-      <AnimatedNumber value={score} className="numeric shrink-0 text-lg font-bold text-primary sm:text-xl" />
+      <div className="min-w-0">
+        <p className={`numeric text-[10px] font-bold ${color}`}>{corner}</p>
+        <p className="min-w-0 truncate text-xs font-semibold sm:text-sm">{name}</p>
+      </div>
+      <AnimatedNumber value={score} className={`numeric shrink-0 text-lg font-bold sm:text-xl ${color}`} />
     </div>
   );
 }
@@ -362,33 +399,41 @@ function DuelSummaryView({
       <div className="glass-panel p-6">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
           <div>
-            <p className="numeric text-4xl font-black text-foreground">{myScore}</p>
+            <p className="numeric text-xs font-bold text-primary">P1</p>
+            <p className="numeric text-4xl font-black text-primary">{myScore}</p>
             <p className="mt-1 truncate text-sm font-medium text-muted-foreground">{user?.name ?? "You"}</p>
             <p className={`numeric mt-0.5 flex items-center justify-center gap-1 text-xs font-semibold ${delta >= 0 ? "text-primary" : "text-destructive"}`}>
               ({newRating}) {delta >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />} {delta >= 0 ? "+" : ""}
               {delta}
             </p>
           </div>
-          <p className="text-lg text-muted-foreground">–</p>
+          <p className="font-display text-lg text-muted-foreground">VS</p>
           <div>
-            <p className="numeric text-4xl font-black text-muted-foreground">{opponentScore}</p>
+            <p className="numeric text-xs font-bold text-secondary">P2</p>
+            <p className="numeric text-4xl font-black text-secondary">{opponentScore}</p>
             <p className="mt-1 truncate text-sm font-medium text-muted-foreground">{opponent?.name ?? "Opponent"}</p>
             {opponent ? <p className="numeric mt-0.5 text-xs font-semibold text-muted-foreground">({Math.round(opponent.rating)})</p> : null}
           </div>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-border bg-surface p-3 text-center">
+          <div className="rounded-[var(--radius)] border border-border bg-surface p-3 text-center">
             <p className="label-micro">Rating</p>
             <AnimatedNumber value={newRating} className="numeric mt-1 block text-xl font-bold text-foreground" />
           </div>
-          <div className="rounded-xl border border-border bg-surface p-3 text-center">
+          <div className="rounded-[var(--radius)] border border-border bg-surface p-3 text-center">
             <p className="label-micro flex items-center justify-center gap-1">
               <Zap className="h-3 w-3 text-highlight" /> XP earned
             </p>
             <AnimatedNumber value={xp} className="numeric mt-1 block text-xl font-bold text-highlight" />
           </div>
         </div>
+
+        {opponent ? (
+          <div className="mt-4">
+            <HeadToHeadPanel opponentId={opponent.user_id} opponentName={opponent.name} phase="after" />
+          </div>
+        ) : null}
 
         {rematchState === "sent" ? (
           <p className="mt-6 text-center text-xs text-muted-foreground">Waiting for {opponent?.name ?? "your opponent"} to respond…</p>

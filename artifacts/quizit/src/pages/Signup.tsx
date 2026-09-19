@@ -1,14 +1,15 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
 import { getErrorMessage } from "@/lib/errors";
 import { useAuth } from "@/stores/auth";
 
 export default function Signup() {
-  const { signup } = useAuth();
+  const { signup, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [form, setForm] = useState({ name: "", email: "", username: "", password: "", college_name: "" });
   const [error, setError] = useState<string | null>(null);
@@ -18,21 +19,27 @@ export default function Signup() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  useEffect(() => {
+    if (isAuthenticated) navigate("/arena", { replace: true });
+  }, [isAuthenticated, navigate]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      await signup({
+      const user = await signup({
         name: form.name,
         email: form.email,
         username: form.username,
         password: form.password,
         college_name: form.college_name || undefined,
       });
-      navigate("/arena", { replace: true });
+      toast({ title: "Account created", description: `Welcome to QuizIt, ${user.name.split(" ")[0]}!` });
     } catch (err) {
-      setError(getErrorMessage(err, "Could not create your account. Please try again."));
+      const message = getErrorMessage(err, "Could not create your account. Please try again.");
+      setError(message);
+      toast({ title: "Sign up failed", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }

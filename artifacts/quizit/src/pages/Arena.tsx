@@ -1,66 +1,45 @@
 import { Link } from "wouter";
-import { BarChart3, Flame, RotateCcw, Swords, Target, Trophy, Zap } from "lucide-react";
-import { useGetMyAnalytics } from "@workspace/api-client-react";
-import { PageHeader } from "@/components/common/PageHeader";
+import { BarChart3, Flame, Hash, RotateCcw, Swords, Target, Trophy, Zap } from "lucide-react";
+import { useGetMyAnalytics, useListFriends } from "@workspace/api-client-react";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { ErrorState, LoadingState } from "@/components/common/StateBlocks";
 import { HoverCard, Reveal, StaggerGroup, StaggerItem } from "@/components/common/Motion";
 import { Button } from "@/components/ui/button";
+import { initialsOf } from "@/components/layout/AppShell";
 import { useAuth } from "@/stores/auth";
 
 export default function Arena() {
   const { user } = useAuth();
   const { data, isPending, isError, refetch } = useGetMyAnalytics();
+  const friendsQuery = useListFriends();
+  const friends = friendsQuery.data?.slice(0, 3) ?? [];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Arena"
-        title={`Welcome back, ${user?.name?.split(" ")[0] ?? "player"}`}
-        description="Keep your streak alive — practice a weak topic, or find a duel."
-      />
-
-      <StaggerGroup className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StaggerItem>
-          <StatCard icon={Trophy} label="Rating" value={user?.user_rating ?? 1000} tone="primary" sub={user?.league} />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCard icon={Flame} label="Streak" value={user?.current_streak ?? 0} tone="warning" suffix=" days" />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCard icon={Zap} label="Total XP" value={user?.total_xp ?? 0} tone="highlight" />
-        </StaggerItem>
-        <StaggerItem>
-          <StatCard icon={BarChart3} label="Accuracy" value={data?.accuracy ?? 0} tone="secondary" suffix="%" />
-        </StaggerItem>
-      </StaggerGroup>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <HoverCard>
-          <ActionCard
-            icon={Swords}
-            title="Find a duel"
-            body="Get matched with someone at your rating and answer head-to-head, live."
-            cta="Queue up"
-            href="/duel/matchmaking"
-            featured
-          />
-        </HoverCard>
-        <HoverCard>
-          <ActionCard
-            icon={Target}
-            title="Practice"
-            body="Drill any topic, or let QuizIt pick questions you've gotten wrong before."
-            cta="Start practicing"
-            href="/practice"
-          />
-        </HoverCard>
-      </div>
+    <div className="space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
+        <div>
+          <h1 className="font-display text-4xl uppercase leading-none tracking-wide text-foreground sm:text-5xl">
+            Welcome back, {user?.name?.split(" ")[0] ?? "player"}
+          </h1>
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">Pick your match — practice solo, or queue for a live duel.</p>
+        </div>
+        <div className="numeric flex divide-x divide-border overflow-hidden rounded-[var(--radius)] border border-border">
+          <HudChip icon={Trophy} value={Math.round(user?.user_rating ?? 1000)} label={user?.league ?? "Bronze"} tone="text-primary" />
+          {data?.rank != null ? (
+            <Link href="/leaderboard" className="contents">
+              <HudChip icon={Hash} value={data.rank} label="rank" tone="text-foreground" />
+            </Link>
+          ) : null}
+          <HudChip icon={Flame} value={user?.current_streak ?? 0} label="streak" tone="text-warning" />
+          <HudChip icon={Zap} value={user?.total_xp ?? 0} label="xp" tone="text-highlight" />
+          <HudChip icon={BarChart3} value={data?.accuracy ?? 0} label="acc%" tone="text-secondary" />
+        </div>
+      </header>
 
       {!isPending && data && (data.due_for_review > 0 || data.recommended_topic) ? (
-        <Reveal delay={0.15} className="surface-panel flex flex-wrap items-center justify-between gap-4 p-5">
+        <Reveal className="glass-panel flex flex-wrap items-center justify-between gap-4 p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning/10 text-warning">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius)] border border-warning/40 bg-warning/10 text-warning">
               <RotateCcw className="h-5 w-5" />
             </div>
             <div>
@@ -80,49 +59,97 @@ export default function Arena() {
         </Reveal>
       ) : null}
 
+      <StaggerGroup className="grid gap-4 lg:grid-cols-3">
+        <StaggerItem className="lg:col-span-2">
+          <HoverCard className="h-full">
+            <ModeTile
+              corner="P1"
+              icon={Swords}
+              title="Find a duel"
+              body="Get matched with someone at your rating. Answer head-to-head, live, best score wins."
+              cta="Queue up"
+              href="/duel/matchmaking"
+              featured
+            />
+          </HoverCard>
+        </StaggerItem>
+        <StaggerItem>
+          <HoverCard className="h-full">
+            <ModeTile
+              corner="P2"
+              icon={Target}
+              title="Practice"
+              body="Drill any topic solo, or let QuizIt pick questions you've missed before."
+              cta="Start practicing"
+              href="/practice"
+            />
+          </HoverCard>
+        </StaggerItem>
+      </StaggerGroup>
+
+      {!friendsQuery.isPending && friends.length > 0 ? (
+        <Reveal delay={0.1}>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="label-micro">Challenge a friend</p>
+            <Link href="/friends" className="text-xs font-semibold text-primary hover:underline">
+              All friends →
+            </Link>
+          </div>
+          <div className="grid gap-2.5 sm:grid-cols-3">
+            {friends.map((friend) => (
+              <Link key={friend.user_id} href="/friends" className="block">
+                <div className="flex items-center gap-3 border border-border bg-surface p-3 transition hover:border-secondary">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[calc(var(--radius)-4px)] border-2 border-secondary bg-card text-xs font-bold text-secondary">
+                    {initialsOf(friend.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">{friend.name}</p>
+                    <p className="numeric truncate text-xs text-muted-foreground">
+                      {Math.round(friend.rating)} · {friend.league}
+                    </p>
+                  </div>
+                  <Swords className="h-4 w-4 shrink-0 text-secondary" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Reveal>
+      ) : !friendsQuery.isPending && friends.length === 0 ? (
+        <Reveal delay={0.1} className="border border-dashed border-border bg-surface p-5 text-center">
+          <p className="text-sm text-muted-foreground">
+            Add friends to challenge them directly. <Link href="/friends" className="font-semibold text-primary hover:underline">Find friends →</Link>
+          </p>
+        </Reveal>
+      ) : null}
+
       {isPending ? <LoadingState label="Loading your stats…" /> : null}
       {isError ? <ErrorState message="Couldn't load your stats." onRetry={() => void refetch()} /> : null}
     </div>
   );
 }
 
-function StatCard({
+function HudChip({
   icon: Icon,
-  label,
   value,
-  suffix = "",
+  label,
   tone,
-  sub,
 }: {
   icon: typeof Trophy;
-  label: string;
   value: number;
-  suffix?: string;
-  tone: "primary" | "warning" | "highlight" | "secondary";
-  sub?: string;
+  label: string;
+  tone: string;
 }) {
-  const toneClass = {
-    primary: "bg-primary/10 text-primary",
-    warning: "bg-warning/10 text-warning",
-    highlight: "bg-highlight/10 text-highlight",
-    secondary: "bg-secondary/10 text-secondary",
-  }[tone];
-
   return (
-    <div className="surface-panel p-4 transition-shadow hover:shadow-md">
-      <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${toneClass}`}>
-        <Icon className="h-4.5 w-4.5" />
-      </div>
-      <AnimatedNumber value={value} suffix={suffix} className="mt-3 block text-2xl font-bold text-foreground" />
-      <p className="label-micro mt-0.5">
-        {label}
-        {sub ? ` · ${sub}` : ""}
-      </p>
+    <div className="flex items-center gap-2 bg-surface px-3 py-2">
+      <Icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
+      <AnimatedNumber value={value} className={`text-sm font-bold ${tone}`} />
+      <span className="label-micro">{label}</span>
     </div>
   );
 }
 
-function ActionCard({
+function ModeTile({
+  corner,
   icon: Icon,
   title,
   body,
@@ -130,6 +157,7 @@ function ActionCard({
   href,
   featured,
 }: {
+  corner: "P1" | "P2";
   icon: typeof Swords;
   title: string;
   body: string;
@@ -137,20 +165,31 @@ function ActionCard({
   href: string;
   featured?: boolean;
 }) {
+  const cornerColor = corner === "P1" ? "text-primary" : "text-secondary";
+  const cornerBorder = corner === "P1" ? "border-primary" : "border-secondary";
+  const tileBorder =
+    corner === "P1"
+      ? featured
+        ? "border-primary hover:glow-primary"
+        : "border-border hover:border-primary"
+      : featured
+        ? "border-secondary hover:glow-secondary"
+        : "border-border hover:border-secondary";
   return (
-    <div className={`glass-panel flex h-full flex-col justify-between p-6 transition-shadow ${featured ? "glow-primary" : "hover:shadow-md"}`}>
-      <div>
-        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${featured ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"}`}>
-          <Icon className="h-5 w-5" />
+    <Link href={href} className="block h-full">
+      <div className={`group relative flex h-full min-h-56 flex-col justify-between overflow-hidden border-2 bg-surface p-6 transition-shadow ${tileBorder}`}>
+        <div className={`numeric absolute right-4 top-4 text-xs font-bold ${cornerColor}`}>{corner}</div>
+        <div>
+          <div className={`flex h-12 w-12 items-center justify-center border-2 ${cornerBorder} ${cornerColor}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 font-display text-2xl uppercase tracking-wide text-foreground">{title}</h3>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">{body}</p>
         </div>
-        <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
-        <p className="mt-1.5 text-sm text-muted-foreground">{body}</p>
-      </div>
-      <Link href={href}>
-        <Button className={`mt-5 w-full ${featured ? "glow-primary" : ""}`} variant={featured ? "default" : "outline"}>
+        <Button className="mt-6 w-fit" variant={featured ? "default" : "outline"}>
           {cta}
         </Button>
-      </Link>
-    </div>
+      </div>
+    </Link>
   );
 }

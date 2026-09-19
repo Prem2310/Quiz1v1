@@ -56,13 +56,10 @@ function NavItem({ to, label, icon: Icon, active }: { to: NavPath; label: string
     <Link
       href={to}
       className={cn(
-        "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-        active ? "text-primary" : "text-muted-foreground hover:bg-surface hover:text-foreground",
+        "relative flex items-center gap-3 border-l-2 px-3 py-2 font-sans text-sm font-bold uppercase tracking-wide transition-colors",
+        active ? "border-primary bg-primary/10 text-primary" : "border-transparent text-muted-foreground hover:border-border hover:bg-surface hover:text-foreground",
       )}
     >
-      {active ? (
-        <motion.div layoutId="nav-active-pill" className="absolute inset-0 rounded-lg bg-primary/10" transition={{ type: "spring", stiffness: 400, damping: 32 }} />
-      ) : null}
       <Icon className="relative h-4 w-4 shrink-0" />
       <span className="relative truncate">{label}</span>
     </Link>

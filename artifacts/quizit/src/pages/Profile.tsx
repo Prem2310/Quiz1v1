@@ -22,7 +22,7 @@ export default function Profile() {
       <PageHeader eyebrow="Profile" title={user.name} description={`@${user.username}${user.college_name ? ` · ${user.college_name}` : ""}`} />
 
       <Reveal className="glass-panel flex flex-wrap items-center gap-5 p-6">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-xl font-bold text-primary">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--radius)] bg-primary/10 text-xl font-bold text-primary">
           {initialsOf(user.name)}
         </div>
         <div className="flex-1">

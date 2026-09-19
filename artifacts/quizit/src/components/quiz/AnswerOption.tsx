@@ -24,7 +24,7 @@ export function AnswerOption({ optionKey, text, html, selected, feedback = "none
       onClick={() => onSelect(optionKey)}
       aria-pressed={selected}
       className={cn(
-        "group flex min-h-[56px] w-full items-center gap-3 rounded-xl border bg-card px-3 py-3 text-left transition-all duration-150 sm:px-4",
+        "group flex min-h-[56px] w-full items-center gap-3 rounded-[var(--radius)] border bg-card px-3 py-3 text-left transition-all duration-150 sm:px-4",
         "hover:border-primary-muted hover:-translate-y-[1px] active:scale-[0.985] disabled:cursor-not-allowed",
         selected && feedback === "none" && "border-primary bg-primary/10",
         feedback === "correct" && "border-primary bg-primary/15",
@@ -35,7 +35,7 @@ export function AnswerOption({ optionKey, text, html, selected, feedback = "none
     >
       <span
         className={cn(
-          "numeric flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-xs font-bold uppercase text-muted-foreground",
+          "numeric flex h-8 w-8 shrink-0 items-center justify-center rounded-[calc(var(--radius)-4px)] border-2 border-border text-xs font-bold uppercase text-muted-foreground",
           selected && "border-primary text-primary",
           feedback === "correct" && "border-primary bg-primary text-primary-foreground",
           feedback === "incorrect" && "border-destructive text-destructive",

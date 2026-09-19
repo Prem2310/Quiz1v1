@@ -9,6 +9,8 @@ export interface Question {
   id: string;
   text: string;
   textHtml?: string;
+  /** Shared IndiaBix "Directions to Solve" passage/table/chart, when this question needs one. */
+  directionsHtml?: string;
   options: Record<OptionKey, string>;
   optionsHtml?: Record<OptionKey, string>;
   difficulty?: string;
@@ -21,6 +23,7 @@ export interface RawQuestion {
   id: string;
   text?: string;
   text_html?: string | null;
+  directions_html?: string | null;
   options?: unknown;
   options_html?: unknown;
   answer_letter?: string | null;
