@@ -1,5 +1,5 @@
 ---
-name: QuizIt
+name: quiz1v1
 description: Arcade versus-screen for placement-exam practice — every surface staged as a match, not a dashboard.
 colors:
   p1-cyan: "hsl(198 90% 58%)"
@@ -56,13 +56,13 @@ components:
     padding: "10px 16px"
 ---
 
-# Design System: QuizIt
+# Design System: quiz1v1
 
 ## Overview
 
 **Creative North Star: "The Versus-Screen"**
 
-QuizIt redesigns around a single refusal: this is not a dashboard with quiz features bolted onto cards. It is staged as a match. Every surface — the home hub, practice setup, the live duel — reads as a character-select or versus screen from 90s arcade fighting games: two opposing corners, a HUD strip of hard numbers, a select-grid of modes, and a clock that means something. The world is hard-edged and CRT-dark, not the soft blurred-glass neon-on-black look the product shipped with before (visible ancestry: `matiks-style` in the prior CSS — an explicit anti-reference for this redesign, not a starting point).
+quiz1v1 redesigns around a single refusal: this is not a dashboard with quiz features bolted onto cards. It is staged as a match. Every surface — the home hub, practice setup, the live duel — reads as a character-select or versus screen from 90s arcade fighting games: two opposing corners, a HUD strip of hard numbers, a select-grid of modes, and a clock that means something. The world is hard-edged and CRT-dark, not the soft blurred-glass neon-on-black look the product shipped with before (visible ancestry: `matiks-style` in the prior CSS — an explicit anti-reference for this redesign, not a starting point).
 
 Two combat colors carry the surface at Committed strength: P1 electric cyan for the player's own corner and primary actions, P2 hot coral for the opponent's corner, destructive states, and urgency. They never blend into a gradient — they oppose, like a fighting game's corner colors. A third HUD color (violet) is reserved for XP/streak/achievement numbers only, kept out of the P1/P2 vocabulary so it never reads as "whose side."
 
@@ -78,7 +78,7 @@ Two combat colors carry the surface at Committed strength: P1 electric cyan for 
 The palette is Committed: cyan and coral each carry real surface weight (borders, active states, HUD chips), not just small accents on a neutral field.
 
 ### Primary
-- **P1 Cyan** (`hsl(198 90% 58%)` / `--primary`): the player's own corner. Primary buttons, active nav state, "you" in every duel, focus rings, the logo's left half.
+- **P1 Cyan** (`hsl(198 90% 58%)` / `--primary`): the player's own corner. Primary buttons, active nav state, "you" in every duel, focus rings, the logo's left half. The mark is two chevrons on a dark tile, P1 cyan on the left facing P2 coral on the right, with a cyan bar and a coral bar beneath them like two health bars. The wordmark spells QUIZ1V1 with "QUIZ" in foreground white and "1V1" as one solid P1 cyan block.
 
 ### Secondary
 - **P2 Coral** (`hsl(8 88% 60%)` / `--secondary`): the opponent's corner. Also destructive/error state and duel-timer urgency — coral reads as "danger" and "opponent" at once, which is intentional: both are the thing working against you.

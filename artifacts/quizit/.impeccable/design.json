@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-09-18T00:00:00Z",
-  "title": "Design System: QuizIt",
+  "title": "Design System: quiz1v1",
   "extensions": {
     "colorMeta": {
       "p1-cyan": { "role": "primary", "displayName": "P1 Cyan", "canonical": "hsl(198 90% 58%)", "tonalRamp": ["hsl(198 90% 15%)", "hsl(198 90% 25%)", "hsl(198 90% 35%)", "hsl(198 90% 45%)", "hsl(198 90% 58%)", "hsl(198 92% 68%)", "hsl(198 94% 80%)", "hsl(198 96% 92%)"] },
@@ -56,7 +56,7 @@
   ],
   "narrative": {
     "northStar": "The Versus-Screen",
-    "overview": "QuizIt redesigns around a single refusal: this is not a dashboard with quiz features bolted onto cards. It is staged as a match. Every surface reads as a character-select or versus screen from 90s arcade fighting games: two opposing corners, a HUD strip of hard numbers, a select-grid of modes, and a clock that means something. Two combat colors carry the surface at Committed strength: P1 electric cyan for the player's own corner and primary actions, P2 hot coral for the opponent's corner, destructive states, and urgency. They never blend into a gradient.",
+    "overview": "quiz1v1 redesigns around a single refusal: this is not a dashboard with quiz features bolted onto cards. It is staged as a match. Every surface reads as a character-select or versus screen from 90s arcade fighting games: two opposing corners, a HUD strip of hard numbers, a select-grid of modes, and a clock that means something. Two combat colors carry the surface at Committed strength: P1 electric cyan for the player's own corner and primary actions, P2 hot coral for the opponent's corner, destructive states, and urgency. They never blend into a gradient.",
     "keyCharacteristics": [
       "Two-corner color opposition (P1 cyan vs. P2 coral), never mixed",
       "Hard-edged cabinet panels — small radius, high-contrast borders, no blur/glass",

@@ -25,7 +25,7 @@ export default function Leaderboard() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Standings" title="Leaderboard" description="Ranked by rating across the QuizIt arena." />
+      <PageHeader title="Leaderboard" description="Ranked by rating across the quiz1v1 arena." />
 
       <Tabs value={scope} onValueChange={(v) => setScope(v as GetLeaderboardScope)}>
         <TabsList className="grid w-full grid-cols-3 bg-surface sm:w-80">
@@ -101,7 +101,7 @@ function PodiumSlot({ entry }: { entry: LeaderboardEntry }) {
       <p className="mt-2 max-w-full truncate text-xs font-semibold text-foreground">{entry.name}</p>
       <p className="numeric text-[11px] text-muted-foreground">{Math.round(entry.user_rating)}</p>
       <div className={cn("mt-2 flex w-full items-start justify-center rounded-t-lg border border-b-0 border-border bg-surface pt-2", PODIUM_HEIGHTS[entry.rank])}>
-        <span className={cn("numeric text-2xl font-black", isFirst ? "text-warning" : "text-muted-foreground")}>{entry.rank}</span>
+        <span className={cn("numeric text-2xl font-bold", isFirst ? "text-warning" : "text-muted-foreground")}>{entry.rank}</span>
       </div>
     </div>
   );

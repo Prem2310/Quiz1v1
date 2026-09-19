@@ -37,13 +37,13 @@ function toError(value: unknown): Error {
 
 function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background p-6">
+    <div className="flex min-h-dvh w-full items-center justify-center bg-background p-6">
       <div className="glass-panel w-full max-w-lg p-8 text-center">
         <h1 className="text-xl font-semibold text-foreground">
           Something went wrong
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This part of the app hit an error. The rest of QuizIt is still running.
+          This part of the app hit an error. The rest of quiz1v1 is still running.
         </p>
         {/* Dev only: messages can carry API responses and other internals. */}
         {import.meta.env.DEV ? (

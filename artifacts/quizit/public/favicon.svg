@@ -1,3 +1,7 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="quiz1v1">
+  <rect x="1" y="1" width="62" height="62" rx="13" fill="#0D0F11" stroke="#2E3138" stroke-width="2"/>
+  <path d="M8 13h11l10 16-10 16H8l10-16z" fill="#34BAF4"/>
+  <path d="M56 13H45L35 29l10 16h11L46 29z" fill="#F3573F"/>
+  <rect x="8" y="50" width="22" height="4" fill="#34BAF4"/>
+  <rect x="34" y="50" width="22" height="4" fill="#F3573F"/>
 </svg>

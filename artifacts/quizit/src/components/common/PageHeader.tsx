@@ -5,8 +5,6 @@ export function PageHeader({
   description,
   actions,
 }: {
-  /** @deprecated no longer rendered — the heading carries its own weight */
-  eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;

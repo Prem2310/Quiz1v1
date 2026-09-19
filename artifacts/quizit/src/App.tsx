@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MotionConfig } from "framer-motion";
 import { setBaseUrl, setAuthTokenGetter } from '@workspace/api-client-react';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 
@@ -40,8 +41,8 @@ function Protected({ children }: { children: ReactNode }) {
   const { isReady, isAuthenticated } = useRequireAuth();
   if (!isReady || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background">
-        <LoadingState label="Loading QuizIt…" />
+      <div className="min-h-dvh bg-background">
+        <LoadingState label="Loading quiz1v1…" />
       </div>
     );
   }
@@ -128,10 +129,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
+          <MotionConfig reducedMotion="user">
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </MotionConfig>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

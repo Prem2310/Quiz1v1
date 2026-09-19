@@ -12,7 +12,7 @@ Students preparing for campus placements and competitive exams (banking, SSC, an
 
 ## Product Purpose
 
-QuizIt is a competitive quiz-practice platform for placement/exam prep. It lets users drill topic-based question sets solo (Practice) and head-to-head in real time (Duels/Arena), tracks progress, and ranks users on a leaderboard. Success is a user returning regularly, improving accuracy/speed on weak topics, and engaging in duels with friends.
+quiz1v1 is a competitive quiz-practice platform for placement/exam prep. It lets users drill topic-based question sets solo (Practice) and head-to-head in real time (Duels/Arena), tracks progress, and ranks users on a leaderboard. Success is a user returning regularly, improving accuracy/speed on weak topics, and engaging in duels with friends.
 
 ## Positioning
 
@@ -33,7 +33,7 @@ Combines exam-style question banks (seeded from IndiaBix content) with real-time
 
 ## Brand Commitments
 
-- Product name "QuizIt" is fixed.
+- Product name "quiz1v1" is fixed (renamed from QuizIt; the name is the idea: two players, one question, 1v1). Always lowercase in running text.
 - Logo, color palette, typography, and overall visual identity are fully open for reinvention (no existing brand anchor to preserve).
 
 ## Evidence on Hand

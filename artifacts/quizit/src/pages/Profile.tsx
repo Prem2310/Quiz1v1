@@ -1,4 +1,5 @@
-import { Flame, Swords, Target, Trophy } from "lucide-react";
+import { Link } from "wouter";
+import { BarChart3, ChevronRight, Flame, LogOut, Settings, Swords, Target, Trophy, Users } from "lucide-react";
 import { useGetMyHistory, useGetMyTopicInsights } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
@@ -7,8 +8,15 @@ import { Reveal, StaggerGroup, StaggerItem } from "@/components/common/Motion";
 import { initialsOf } from "@/components/layout/AppShell";
 import { useAuth } from "@/stores/auth";
 
+// The bottom tab bar only has room for five destinations, so these are reachable from here on phones.
+const MORE_LINKS = [
+  { to: "/progress", label: "Progress", icon: BarChart3 },
+  { to: "/friends", label: "Friends", icon: Users },
+  { to: "/settings", label: "Settings", icon: Settings },
+] as const;
+
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const historyQuery = useGetMyHistory({ limit: 10 });
   const topicsQuery = useGetMyTopicInsights();
 
@@ -19,7 +27,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Profile" title={user.name} description={`@${user.username}${user.college_name ? ` · ${user.college_name}` : ""}`} />
+      <PageHeader title={user.name} description={`@${user.username}${user.college_name ? ` · ${user.college_name}` : ""}`} />
 
       <Reveal className="glass-panel flex flex-wrap items-center gap-5 p-6">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--radius)] bg-primary/10 text-xl font-bold text-primary">
@@ -47,6 +55,26 @@ export default function Profile() {
           <Stat icon={Trophy} label="Total XP" value={user.total_xp} />
         </StaggerItem>
       </StaggerGroup>
+
+      <Reveal className="lg:hidden">
+        <nav aria-label="More" className="surface-panel divide-y divide-border">
+          {MORE_LINKS.map(({ to, label, icon: Icon }) => (
+            <Link key={to} href={to} className="flex min-h-12 items-center gap-3 px-4 text-sm font-bold uppercase tracking-wide text-foreground">
+              <Icon className="h-4 w-4 text-primary" />
+              <span className="flex-1">{label}</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
+          ))}
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className="flex min-h-12 w-full items-center gap-3 px-4 text-left text-sm font-bold uppercase tracking-wide text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
+            Log out
+          </button>
+        </nav>
+      </Reveal>
 
       <Reveal delay={0.1}>
         <h2 className="mb-3 text-sm font-semibold text-foreground">Accuracy by topic</h2>

@@ -9,15 +9,13 @@ export function AuthLayout({
   children,
   footer,
 }: {
-  /** @deprecated no longer rendered — the heading carries its own weight */
-  eyebrow?: string;
   title: string;
   subtitle: string;
   children: ReactNode;
   footer: ReactNode;
 }) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10">
+    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background px-4 py-10">
       <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}

@@ -79,7 +79,7 @@
 }
 
 /*
- * QuizIt runs as an arcade versus-screen: two combat colors (P1 cyan, P2
+ * quiz1v1 runs as an arcade versus-screen: two combat colors (P1 cyan, P2
  * coral) oppose on a near-black CRT ground, never blended. Hard-edged
  * cabinet panels, not glass. Same palette whether or not `.dark` is present.
  */
@@ -210,6 +210,47 @@
   ::selection {
     background: hsl(var(--primary) / 0.3);
   }
+
+  /* Browser surfaces: themed from the palette rather than shipped as defaults. */
+  html {
+    color-scheme: dark;
+    scrollbar-color: hsl(var(--border)) hsl(var(--background));
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  textarea {
+    caret-color: hsl(var(--primary));
+  }
+
+  a,
+  button,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+
+  a:not([class*='no-underline']) {
+    text-underline-offset: 3px;
+  }
+
+  /* Keyboard focus is always visible, even on bare links and custom tiles. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pulse-ring,
+    .float-slow,
+    .shake,
+    .confetti-piece {
+      animation: none;
+    }
+
+    .confetti-piece {
+      display: none;
+    }
+  }
 }
 
 @layer utilities {
@@ -285,7 +326,7 @@
     inset: -1px;
   }
 
-  /* --- QuizIt design system additions --------------------------------- */
+  /* --- quiz1v1 design system additions --------------------------------- */
 
   .font-display {
     font-family: var(--font-display);
@@ -297,7 +338,7 @@
   }
 
   .label-micro {
-    @apply text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+    @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground;
   }
 
   /* Flat cabinet bezel — a fighter-select panel, not a glass card. */

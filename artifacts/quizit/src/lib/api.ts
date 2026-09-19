@@ -43,7 +43,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   try {
     response = await fetch(`${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`, init);
   } catch {
-    throw new ApiError(0, "Unable to connect to QuizIt. Check your connection and try again.");
+    throw new ApiError(0, "Unable to connect to quiz1v1. Check your connection and try again.");
   }
 
   if (response.status === 401) {

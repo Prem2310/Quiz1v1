@@ -32,7 +32,7 @@ export default function Settings() {
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
-      <PageHeader eyebrow="Settings" title="Your profile" description="Update how you appear on the leaderboard." />
+      <PageHeader title="Settings" description="Update how you appear on the leaderboard." />
 
       <Reveal>
         <form onSubmit={onSubmit} className="surface-panel space-y-4 p-6">
@@ -48,9 +48,13 @@ export default function Settings() {
             <Label htmlFor="college">College / university</Label>
             <Input id="college" value={collegeName} onChange={(e) => setCollegeName(e.target.value)} placeholder="For the college leaderboard" />
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button type="submit" className="w-full glow-primary" disabled={status === "saving"}>
-            {status === "saving" ? "Saving…" : status === "saved" ? "Saved ✓" : "Save changes"}
+          {error ? (
+            <p role="alert" className="border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+          <Button type="submit" className="w-full" disabled={status === "saving"}>
+            {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : "Save changes"}
           </Button>
         </form>
       </Reveal>
