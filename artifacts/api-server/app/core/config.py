@@ -1,7 +1,7 @@
-from functools import lru_cache
 import os
+from functools import lru_cache
 
-from pydantic import Field
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     jwt_secret: str | None = Field(
         default=None,
-        validation_alias="JWT_SECRET",
+        validation_alias=AliasChoices("JWT_SECRET", "SESSION_SECRET"),
     )
 
     jwt_algorithm: str = "HS256"
@@ -56,13 +56,19 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
+    @field_validator("database_url", "supabase_database_url", "redis_url", mode="before")
+    @classmethod
+    def strip_connection_urls(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def normalize_cors_origins(cls, value: str) -> str:
+        return ",".join(origin.strip() for origin in value.split(",") if origin.strip())
+
     @property
     def cors_origin_list(self) -> list[str]:
-        return [
-            origin.strip()
-            for origin in self.cors_origins.split(",")
-            if origin.strip()
-        ]
+        return self.cors_origins.split(",") if self.cors_origins else []
 
     @property
     def async_database_url(self) -> str:
@@ -70,7 +76,7 @@ class Settings(BaseSettings):
         Use Supabase PostgreSQL when SUPABASE_DATABASE_URL is configured.
         Convert PostgreSQL URLs to SQLAlchemy's asyncpg driver format.
         """
-        database_url = self.supabase_database_url or self.database_url
+        database_url = (self.supabase_database_url or self.database_url).strip()
 
         if database_url.startswith("postgresql://"):
             return database_url.replace(
@@ -97,6 +103,6 @@ class Settings(BaseSettings):
         )
 
 
-@lru_cache
+@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()

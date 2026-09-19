@@ -9,7 +9,7 @@ from app.db import init_db
 from app.redis_client import room_broker
 from app.routers import analytics, auth, catalog, duels, health, quizzes, social
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
@@ -18,11 +18,17 @@ async def lifespan(_: FastAPI):
     try:
         await init_db()
     except Exception:
-        logging.getLogger(__name__).warning("Database initialization unavailable; API will start without it", exc_info=True)
+        logger.warning(
+            "Database initialization unavailable; API will start without it",
+            exc_info=True,
+        )
     try:
         await room_broker.connect()
     except Exception:
-        logging.getLogger(__name__).warning("Redis unavailable; using local room coordination", exc_info=True)
+        logger.warning(
+            "Redis unavailable; using local room coordination",
+            exc_info=True,
+        )
     yield
     await room_broker.close()
 
@@ -37,11 +43,14 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list or ["*"],
+    # Wildcard origins cannot be used with credentialed cookie requests.
+    allow_origins=[origin for origin in settings.cors_origin_list if origin != "*"],
     # Netlify deploy previews and local dev use origins that are not stable
     # enough to enumerate in the Render environment variables.
     allow_origin_regex=(
-        r"^https?://localhost(:\d+)?$|^https://[a-z0-9-]+\.netlify\.app$"
+        r"^https?://localhost(:\d+)?$"
+        r"|^https://[a-z0-9-]+\.netlify\.app$"
+        r"|^https://[a-z0-9-]+\.vercel\.app$"
     ),
     allow_credentials=True,
     allow_methods=["*"],
