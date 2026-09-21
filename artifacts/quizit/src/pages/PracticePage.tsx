@@ -267,7 +267,7 @@ export default function PracticePage() {
               <RotateCcw className="h-4 w-4" /> Practice again
             </Button>
             <Button variant="outline" className="flex-1" asChild>
-              <Link href="/arena">Back to Arena</Link>
+              <Link href="/">Back to Arena</Link>
             </Button>
           </div>
         </motion.div>

@@ -1,8 +1,8 @@
-import { type ReactNode, useEffect } from "react";
+import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from "framer-motion";
 import { setBaseUrl, setAuthTokenGetter } from '@workspace/api-client-react';
-import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
+import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -50,13 +50,28 @@ function Protected({ children }: { children: ReactNode }) {
   return <AppShell>{children}</AppShell>;
 }
 
-function LandingOrRedirect() {
+/**
+ * The homepage. Signed in, "/" is the dashboard itself (no redirect, so no flash of the landing page and no URL jump);
+ * signed out it is the marketing page. Crawlers are signed out, so the landing page stays what gets indexed.
+ */
+function Home() {
   const { isReady, isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
-  useEffect(() => {
-    if (isReady && isAuthenticated) navigate('/arena', { replace: true });
-  }, [isReady, isAuthenticated, navigate]);
-  if (isReady && isAuthenticated) return null;
+  // A saved token means a signed-in visit is very likely, so wait for /me instead of flashing the landing page.
+  const maybeSignedIn = localStorage.getItem("access_token") !== null;
+  if (!isReady && maybeSignedIn) {
+    return (
+      <div className="min-h-dvh bg-background">
+        <LoadingState label="Loading quiz1v1…" />
+      </div>
+    );
+  }
+  if (isAuthenticated) {
+    return (
+      <Protected>
+        <Arena />
+      </Protected>
+    );
+  }
   return <Landing />;
 }
 
@@ -64,15 +79,14 @@ function Router() {
   return (
     <RoutedErrorBoundary>
       <Switch>
-        <Route path="/" component={LandingOrRedirect} />
+        <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/topics/:slug">{(params) => <TopicPage slug={params.slug} />}</Route>
 
+        {/* the dashboard used to live here; keep old links and bookmarks working */}
         <Route path="/arena">
-          <Protected>
-            <Arena />
-          </Protected>
+          <Redirect to="/" replace />
         </Route>
         <Route path="/practice">
           <Protected>

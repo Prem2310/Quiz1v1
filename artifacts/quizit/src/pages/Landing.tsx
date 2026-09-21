@@ -258,7 +258,7 @@ export default function Landing() {
               Free to use. No credit card. Just questions, a rating, and people to beat.
             </p>
             <Button size="lg" asChild>
-              <Link href={isAuthenticated ? "/arena" : "/signup"}>
+              <Link href={isAuthenticated ? "/" : "/signup"}>
                 {isAuthenticated ? "Enter the arena" : "Create your free account"}
               </Link>
             </Button>

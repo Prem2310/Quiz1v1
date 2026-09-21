@@ -19,9 +19,9 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   // Navigate only once the auth context has the user; navigating right after login()
-  // renders /arena before the cache update propagates and bounces back to /login.
+  // renders the dashboard before the cache update propagates and bounces back to /login.
   useEffect(() => {
-    if (isAuthenticated) navigate("/arena", { replace: true });
+    if (isAuthenticated) navigate("/", { replace: true });
   }, [isAuthenticated, navigate]);
 
   async function onSubmit(e: FormEvent) {

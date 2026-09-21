@@ -17,7 +17,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
         <nav className="flex items-center gap-2">
           {isAuthenticated ? (
             <Button size="sm" asChild>
-              <Link href="/arena">Go to Arena</Link>
+              <Link href="/">Go to Arena</Link>
             </Button>
           ) : (
             <>

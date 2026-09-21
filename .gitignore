@@ -63,3 +63,6 @@ __pycache__/
 
 # impeccable design-hook cache: rewritten on every edit, never worth committing
 **/.impeccable/hook.cache.json
+
+# browser-automation scratch output
+/.playwright-mcp/

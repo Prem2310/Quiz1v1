@@ -237,7 +237,7 @@ export default function DuelRoom() {
           <ConnectionIndicator state={connection} />
           <p className="hidden text-xs text-muted-foreground sm:block">Press A · B · C · D to answer</p>
           <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
-            <Link href="/arena">
+            <Link href="/">
               <Flag className="h-3.5 w-3.5" /> Leave
             </Link>
           </Button>
@@ -317,7 +317,7 @@ function DuelSummaryView({
           <p className="text-lg font-semibold text-foreground">Your opponent left the duel</p>
           <p className="mt-2 text-sm text-muted-foreground">No rating change was applied.</p>
           <Button className="mt-6 w-full" asChild>
-            <Link href="/arena">Back to Arena</Link>
+            <Link href="/">Back to Arena</Link>
           </Button>
         </div>
       </div>
@@ -383,7 +383,7 @@ function DuelSummaryView({
     <div className="mx-auto max-w-lg">
       <div className="mb-6 flex items-center justify-between">
         <Button variant="outline" size="icon" aria-label="Home" asChild>
-          <Link href="/arena">
+          <Link href="/">
             <Home className="h-4 w-4" />
           </Link>
         </Button>
