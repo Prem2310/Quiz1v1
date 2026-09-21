@@ -13,6 +13,7 @@ import NotFound from '@/pages/not-found';
 import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
+import TopicPage from '@/pages/TopicPage';
 import Arena from '@/pages/Arena';
 import PracticePage from '@/pages/PracticePage';
 import DuelMatchmaking from '@/pages/DuelMatchmaking';
@@ -66,6 +67,7 @@ function Router() {
         <Route path="/" component={LandingOrRedirect} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
+        <Route path="/topics/:slug">{(params) => <TopicPage slug={params.slug} />}</Route>
 
         <Route path="/arena">
           <Protected>
