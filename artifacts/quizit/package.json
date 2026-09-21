@@ -44,6 +44,7 @@
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
@@ -54,7 +55,6 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "dompurify": "^3.2.4",
-    "@types/dompurify": "^3.0.5",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "catalog:",
     "input-otp": "^1.4.2",
@@ -75,5 +75,8 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "html-to-image": "^1.11.13"
   }
 }

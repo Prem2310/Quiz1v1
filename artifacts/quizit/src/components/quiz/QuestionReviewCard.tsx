@@ -27,7 +27,7 @@ export function QuestionReviewCard({ review, index }: { review: QuestionReview; 
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           {question.directionsHtml ? (
-            <SafeHtml html={question.directionsHtml} className="rounded-[var(--radius)] border border-border bg-surface/60 p-2.5 text-xs text-muted-foreground [&_img]:max-w-full [&_table]:w-full" />
+            <SafeHtml html={question.directionsHtml} className="rounded-[var(--radius)] border border-border bg-surface/60 p-3 text-sm leading-relaxed text-muted-foreground [&_img]:max-w-full [&_table]:w-full" />
           ) : null}
           <div className="flex min-w-0 gap-3">
             <span className="numeric shrink-0 text-xs font-bold text-muted-foreground">Q{index + 1}</span>

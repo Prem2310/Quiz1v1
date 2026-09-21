@@ -61,6 +61,8 @@ export interface DuelScorePayload {
   type: "score_update" | "reveal" | "duel_end";
   index?: number;
   scores: Record<string, number>;
+  /** user ids (as strings) who have locked in an answer for the current question — only on score_update */
+  answered?: string[];
   correct_answer?: string | null;
   explanation?: string | null;
   winner_id?: number | null;

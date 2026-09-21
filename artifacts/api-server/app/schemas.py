@@ -241,6 +241,19 @@ class SubtopicWeakness(BaseModel):
 LeaderboardScope = Literal["global", "college", "friends"]
 
 
+class RatingPoint(BaseModel):
+    """One finished duel on the rating graph."""
+
+    duel_id: int
+    completed_at: datetime | None
+    rating_before: float
+    rating_after: float
+    result: Literal["win", "loss", "draw"]
+    opponent_name: str
+    my_score: int
+    opponent_score: int
+
+
 class LeaderboardEntry(BaseModel):
     rank: int
     user_id: int
@@ -282,6 +295,10 @@ class DuelSummary(BaseModel):
     player2: DuelOpponent
     player1_score: int
     player2_score: int
+    player1_correct: int = 0
+    player2_correct: int = 0
+    player1_xp: int | None = None
+    player2_xp: int | None = None
     winner_id: int | None
     player1_rating_before: float
     player2_rating_before: float
@@ -289,6 +306,29 @@ class DuelSummary(BaseModel):
     player2_rating_after: float | None
     started_at: datetime | None
     completed_at: datetime | None
+
+
+class DuelPlayerAnswer(BaseModel):
+    selected_answer: str | None
+    is_correct: bool
+    time_taken_seconds: int | None = None
+    points: int = 0
+
+
+class DuelQuestionReview(BaseModel):
+    """One duel question with both players' answers, for the post-duel review."""
+
+    question_id: str
+    text: str
+    text_html: str | None = None
+    directions_html: str | None = None
+    options: Any
+    options_html: Any | None = None
+    correct_answer: str | None
+    explanation: str | None = None
+    explanation_html: str | None = None
+    player1: DuelPlayerAnswer
+    player2: DuelPlayerAnswer
 
 
 class DuelChallengeCreate(BaseModel):

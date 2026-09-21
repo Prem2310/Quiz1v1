@@ -19,6 +19,12 @@ export interface DuelSummary {
   player2: DuelOpponent;
   player1_score: number;
   player2_score: number;
+  player1_correct?: number;
+  player2_correct?: number;
+  /** @nullable */
+  player1_xp?: number | null;
+  /** @nullable */
+  player2_xp?: number | null;
   /** @nullable */
   winner_id?: number | null;
   player1_rating_before: number;
