@@ -64,6 +64,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
+  /auth/providers:
+    get:
+      operationId: getAuthProviders
+      tags: [auth]
+      summary: Social sign-in providers that are configured (the browser flow itself starts at /auth/oauth/{provider}/start)
+      responses:
+        "200":
+          description: Enabled providers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthProviders"
   /auth/logout:
     post:
       operationId: logout
@@ -113,6 +125,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PublicStats"
+  /colleges:
+    get:
+      operationId: listColleges
+      tags: [colleges]
+      summary: Search the college list (names starting with the query come first)
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema: { type: string, maxLength: 100, default: "" }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        "200":
+          description: Matching colleges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/College"
   /topics:
     get:
       operationId: listTopics
@@ -707,6 +742,19 @@ components:
       schema:
         type: integer
   schemas:
+    AuthProviders:
+      type: object
+      required: [providers]
+      properties:
+        providers:
+          type: array
+          items: { type: string, enum: [google, github] }
+    College:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
     PublicStats:
       type: object
       required: [registered_users, online_now]

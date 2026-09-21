@@ -79,7 +79,38 @@
     <noscript><style>body { background: #0d0f11; color: #f7f7f7; font-family: system-ui, sans-serif; }</style></noscript>
   </head>
   <body>
-    <div id="root"></div>
+        <div id="root">
+      <!-- Shown until React mounts (React replaces it): same mark and wordmark as the app's BrandLoader, in literal colors
+           because the bundled stylesheet and fonts may not have arrived yet. -->
+      <style>
+        #boot { min-height: 100dvh; display: grid; place-items: center; background: #0d0f11; }
+        #boot .in { display: flex; flex-direction: column; align-items: center; animation: boot-in .25s ease-out .2s both; }
+        #boot svg { width: 88px; height: 88px; }
+        #boot .w { margin-top: 20px; font: 400 34px/1 Anton, "Arial Narrow", sans-serif; letter-spacing: .1em; color: #f7f7f7; text-transform: uppercase; }
+        #boot .w b { font-weight: inherit; color: #34baf4; }
+        #boot .p1, #boot .p2, #boot .b1, #boot .b2 { transform-box: fill-box; animation: 1.6s cubic-bezier(.65,0,.35,1) infinite; }
+        #boot .p1 { animation-name: boot-p1; } #boot .p2 { animation-name: boot-p2; }
+        #boot .b1 { transform-origin: left center; animation-name: boot-b1; } #boot .b2 { transform-origin: right center; animation-name: boot-b2; }
+        @keyframes boot-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes boot-p1 { 0%, 100% { transform: translateX(-4px); } 45%, 60% { transform: translateX(3px); } }
+        @keyframes boot-p2 { 0%, 100% { transform: translateX(4px); } 45%, 60% { transform: translateX(-3px); } }
+        @keyframes boot-b1 { 0%, 100% { transform: scaleX(.35); } 50% { transform: scaleX(1); } }
+        @keyframes boot-b2 { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.35); } }
+        @media (prefers-reduced-motion: reduce) { #boot .p1, #boot .p2, #boot .b1, #boot .b2 { animation: none; } }
+      </style>
+      <div id="boot" role="status" aria-label="Loading quiz1v1">
+        <div class="in">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect x="1" y="1" width="62" height="62" rx="13" fill="#0D0F11" stroke="#2E3138" stroke-width="2"/>
+            <path class="p1" d="M8 13h11l10 16-10 16H8l10-16z" fill="#34BAF4"/>
+            <path class="p2" d="M56 13H45L35 29l10 16h11L46 29z" fill="#F3573F"/>
+            <rect class="b1" x="8" y="50" width="22" height="4" fill="#34BAF4"/>
+            <rect class="b2" x="34" y="50" width="22" height="4" fill="#F3573F"/>
+          </svg>
+          <div class="w">QUIZ<b>1V1</b></div>
+        </div>
+      </div>
+    </div>
     <!-- Crawlers and link previews that do not run JavaScript still get the substance of the page. -->
     <noscript>
       <main style="max-width: 720px; margin: 0 auto; padding: 32px 16px; line-height: 1.5">

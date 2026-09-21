@@ -51,6 +51,16 @@ class Settings(BaseSettings):
         validation_alias="COOKIE_SECURE",
     )
 
+    # Social sign-in. A provider is offered only when both its id and secret are set.
+    google_client_id: str | None = Field(default=None, validation_alias="GOOGLE_CLIENT_ID")
+    google_client_secret: str | None = Field(default=None, validation_alias="GOOGLE_CLIENT_SECRET")
+    github_client_id: str | None = Field(default=None, validation_alias="GITHUB_CLIENT_ID")
+    github_client_secret: str | None = Field(default=None, validation_alias="GITHUB_CLIENT_SECRET")
+    # Where the browser lands after sign-in (the web app), and this API's public origin (used to build the
+    # redirect URI registered with each provider; falls back to the incoming request's origin when unset).
+    frontend_url: str = Field(default="https://quiz1v1.tech", validation_alias="FRONTEND_URL")
+    api_public_url: str | None = Field(default=None, validation_alias="API_PUBLIC_URL")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

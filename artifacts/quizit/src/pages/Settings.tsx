@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Reveal } from "@/components/common/Motion";
 import { Button } from "@/components/ui/button";
+import { CollegePicker } from "@/components/auth/CollegePicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getErrorMessage } from "@/lib/errors";
@@ -21,7 +22,7 @@ export default function Settings() {
     setStatus("saving");
     setError(null);
     try {
-      await updateProfile({ name, username, college_name: collegeName || null });
+      await updateProfile({ name, username, college_name: collegeName });
       setStatus("saved");
       window.setTimeout(() => setStatus("idle"), 2000);
     } catch (err) {
@@ -46,7 +47,8 @@ export default function Settings() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="college">College / university</Label>
-            <Input id="college" value={collegeName} onChange={(e) => setCollegeName(e.target.value)} placeholder="For the college leaderboard" />
+            <CollegePicker key={user?.college_name ?? ""} id="college" value={collegeName} onChange={setCollegeName} />
+            <p className="text-xs text-muted-foreground">Sets which college leaderboard you appear on.</p>
           </div>
           {error ? (
             <p role="alert" className="border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">

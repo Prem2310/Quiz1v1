@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { SocialButtons } from "@/components/auth/SocialButtons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +10,23 @@ import { getErrorMessage } from "@/lib/errors";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useAuth } from "@/stores/auth";
 
+const SOCIAL_ERRORS: Record<string, string> = {
+  oauth_denied: "Sign-in was cancelled. You can try again or use your email.",
+  oauth_no_email: "That account has no verified email address, which quiz1v1 needs. Verify it with the provider or sign up with email.",
+  oauth_unavailable: "That sign-in option isn't available right now. Use your email instead.",
+  oauth_failed: "We couldn't complete that sign-in. Please try again.",
+};
+
 export default function Login() {
   usePageMeta("Log in · quiz1v1");
   const { login, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    const code = new URLSearchParams(window.location.search).get("error");
+    return code ? (SOCIAL_ERRORS[code] ?? SOCIAL_ERRORS["oauth_failed"]) : null;
+  });
   const [submitting, setSubmitting] = useState(false);
 
   // Navigate only once the auth context has the user; navigating right after login()
@@ -52,6 +63,7 @@ export default function Login() {
         </>
       }
     >
+      <SocialButtons verb="Continue" />
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="emailOrUsername">Email or username</Label>

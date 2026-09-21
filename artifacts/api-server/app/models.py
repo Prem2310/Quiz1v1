@@ -12,12 +12,16 @@ JsonType = JSON().with_variant(JSONB, "postgresql")
 
 class UserData(Base):
     __tablename__ = "user_data"
+    __table_args__ = (UniqueConstraint("auth_provider", "provider_account_id", name="uq_user_auth_provider_account"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(40), unique=True, index=True)
-    password_hash: Mapped[str] = mapped_column(String(255))
+    # NULL for accounts created through Google/GitHub sign-in (they have no password to check).
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    auth_provider: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    provider_account_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     college_name: Mapped[str | None] = mapped_column(String(180), nullable=True)
     profile_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     date_joined: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -37,6 +41,19 @@ class UserData(Base):
 
     quiz_attempts: Mapped[list["UserQuizHistory"]] = relationship(back_populates="user", foreign_keys="UserQuizHistory.user_id")
     question_stats: Mapped[list["UserQuestionStats"]] = relationship(back_populates="user")
+
+
+class College(Base):
+    """The list the profile's college picker offers. Seeded from a file; users add their own through "Other"."""
+
+    __tablename__ = "college"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(180))
+    # lowercased, punctuation-free form of `name`: what makes "IIT  Delhi" and "iit delhi" the same college
+    name_key: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    source: Mapped[str] = mapped_column(String(10), default="user", server_default="user")  # "seed" or "user"
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class Topic(Base):

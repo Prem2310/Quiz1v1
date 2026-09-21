@@ -1,5 +1,6 @@
 import { Medal } from "lucide-react";
 import { useState } from "react";
+import { Link } from "wouter";
 import { GetLeaderboardScope, useGetLeaderboard, type LeaderboardEntry } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { ErrorState, LoadingState } from "@/components/common/StateBlocks";
@@ -44,7 +45,14 @@ export default function Leaderboard() {
           {scope === GetLeaderboardScope.college
             ? user?.college_name
               ? "No one from your college has played yet."
-              : "Add your college in Settings to see a college leaderboard."
+              : (
+                <>
+                  <Link href="/settings" className="font-medium text-primary hover:underline">
+                    Pick your college in Settings
+                  </Link>{" "}
+                  to see a college leaderboard.
+                </>
+              )
             : scope === GetLeaderboardScope.friends
               ? "Add friends to see how you stack up against them."
               : "No players yet."}

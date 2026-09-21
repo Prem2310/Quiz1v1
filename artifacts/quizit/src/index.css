@@ -243,7 +243,11 @@
     .pulse-ring,
     .float-slow,
     .shake,
-    .confetti-piece {
+    .confetti-piece,
+    .loader-p1,
+    .loader-p2,
+    .loader-bar-p1,
+    .loader-bar-p2 {
       animation: none;
     }
 
@@ -388,6 +392,50 @@
   .pulse-ring {
     animation: quizit-pulse-ring 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  /* Loader: the P1/P2 chevrons close in and clash, then part; the bars trade fill like a duel. transform/opacity only. */
+  @keyframes quizit-clash-p1 {
+    0%, 100% { transform: translateX(-4px); }
+    45%, 60% { transform: translateX(3px); }
+  }
+
+  @keyframes quizit-clash-p2 {
+    0%, 100% { transform: translateX(4px); }
+    45%, 60% { transform: translateX(-3px); }
+  }
+
+  @keyframes quizit-bar-p1 {
+    0%, 100% { transform: scaleX(0.35); }
+    50% { transform: scaleX(1); }
+  }
+
+  @keyframes quizit-bar-p2 {
+    0%, 100% { transform: scaleX(1); }
+    50% { transform: scaleX(0.35); }
+  }
+
+  @keyframes quizit-loader-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .loader-p1,
+  .loader-p2,
+  .loader-bar-p1,
+  .loader-bar-p2 {
+    transform-box: fill-box;
+    animation-duration: 1.6s;
+    animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+    animation-iteration-count: infinite;
+  }
+
+  .loader-p1 { animation-name: quizit-clash-p1; }
+  .loader-p2 { animation-name: quizit-clash-p2; }
+  .loader-bar-p1 { transform-origin: left center; animation-name: quizit-bar-p1; }
+  .loader-bar-p2 { transform-origin: right center; animation-name: quizit-bar-p2; }
+
+  /* Fast loads never show a loader: it fades in only if the wait outlasts 200ms. */
+  .loader-fade { animation: quizit-loader-in 0.25s ease-out 0.2s both; }
 
   @keyframes quizit-float {
     0%, 100% { transform: translateY(0); }

@@ -8,8 +8,11 @@
 
 export * from './analyticsSummary';
 export * from './attemptSummary';
+export * from './authProviders';
+export * from './authProvidersProvidersItem';
 export * from './authResponse';
 export * from './authResponseTokenType';
+export * from './college';
 export * from './duelChallengeCreate';
 export * from './duelChallengeRead';
 export * from './duelChallengeReadStatus';
@@ -28,6 +31,7 @@ export * from './headToHeadResult';
 export * from './headToHeadResultResult';
 export * from './healthStatus';
 export * from './leaderboardEntry';
+export * from './listCollegesParams';
 export * from './listQuestionsDifficulty';
 export * from './listQuestionsParams';
 export * from './progressTrendPoint';

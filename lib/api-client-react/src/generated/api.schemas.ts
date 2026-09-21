@@ -5,6 +5,23 @@
  * quiz1v1 competitive aptitude practice API
  * OpenAPI spec version: 1.0.0
  */
+export type AuthProvidersProvidersItem = typeof AuthProvidersProvidersItem[keyof typeof AuthProvidersProvidersItem];
+
+
+export const AuthProvidersProvidersItem = {
+  google: 'google',
+  github: 'github',
+} as const;
+
+export interface AuthProviders {
+  providers: AuthProvidersProvidersItem[];
+}
+
+export interface College {
+  id: number;
+  name: string;
+}
+
 export interface PublicStats {
   registered_users: number;
   online_now: number;
@@ -452,6 +469,18 @@ export interface FriendRequestRead {
   addressee: DuelOpponent;
   created_at: string;
 }
+
+export type ListCollegesParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
 
 export type ListQuestionsParams = {
 topic_id?: number;

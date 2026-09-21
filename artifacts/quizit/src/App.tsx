@@ -8,11 +8,12 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppShell } from '@/components/layout/AppShell';
-import { LoadingState } from '@/components/common/StateBlocks';
+import { BrandLoader } from '@/components/brand/BrandLoader';
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
+import AuthCallback from '@/pages/AuthCallback';
 import TopicPage from '@/pages/TopicPage';
 import Arena from '@/pages/Arena';
 import PracticePage from '@/pages/PracticePage';
@@ -41,11 +42,7 @@ const queryClient = new QueryClient({
 function Protected({ children }: { children: ReactNode }) {
   const { isReady, isAuthenticated } = useRequireAuth();
   if (!isReady || !isAuthenticated) {
-    return (
-      <div className="min-h-dvh bg-background">
-        <LoadingState label="Loading quiz1v1…" />
-      </div>
-    );
+    return <BrandLoader />;
   }
   return <AppShell>{children}</AppShell>;
 }
@@ -59,11 +56,7 @@ function Home() {
   // A saved token means a signed-in visit is very likely, so wait for /me instead of flashing the landing page.
   const maybeSignedIn = localStorage.getItem("access_token") !== null;
   if (!isReady && maybeSignedIn) {
-    return (
-      <div className="min-h-dvh bg-background">
-        <LoadingState label="Loading quiz1v1…" />
-      </div>
-    );
+    return <BrandLoader />;
   }
   if (isAuthenticated) {
     return (
@@ -82,6 +75,7 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
+        <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/topics/:slug">{(params) => <TopicPage slug={params.slug} />}</Route>
 
         {/* the dashboard used to live here; keep old links and bookmarks working */}
