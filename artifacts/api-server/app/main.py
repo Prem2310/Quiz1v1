@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.db import init_db
 from app.redis_client import room_broker
-from app.routers import analytics, auth, catalog, duels, health, quizzes, social
+from app.routers import analytics, auth, catalog, colleges, duels, health, quizzes, social
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -62,6 +62,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(catalog.router, prefix="/api")
+app.include_router(colleges.router, prefix="/api")
 app.include_router(quizzes.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(duels.router, prefix="/api")

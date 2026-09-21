@@ -99,6 +99,14 @@ export const LoginResponse = zod.object({
 
 
 /**
+ * @summary Social sign-in providers that are configured (the browser flow itself starts at /auth/oauth/{provider}/start)
+ */
+export const GetAuthProvidersResponse = zod.object({
+  "providers": zod.array(zod.enum(['google', 'github']))
+})
+
+
+/**
  * @summary Clear the current session
  */
 export const LogoutResponse = zod.void()
@@ -178,6 +186,29 @@ export const GetPublicStatsResponse = zod.object({
   "registered_users": zod.int(),
   "online_now": zod.int()
 })
+
+
+/**
+ * @summary Search the college list (names starting with the query come first)
+ */
+export const listCollegesQueryQDefault = ``;
+export const listCollegesQueryQMax = 100;
+
+export const listCollegesQueryLimitDefault = 25;
+export const listCollegesQueryLimitMax = 100;
+
+
+
+export const ListCollegesQueryParams = zod.object({
+  "q": zod.coerce.string().max(listCollegesQueryQMax).default(listCollegesQueryQDefault),
+  "limit": zod.coerce.number().int().min(1).max(listCollegesQueryLimitMax).default(listCollegesQueryLimitDefault)
+})
+
+export const ListCollegesResponseItem = zod.object({
+  "id": zod.int(),
+  "name": zod.string()
+})
+export const ListCollegesResponse = zod.array(ListCollegesResponseItem)
 
 
 /**

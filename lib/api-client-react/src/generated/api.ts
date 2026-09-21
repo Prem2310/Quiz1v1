@@ -22,7 +22,9 @@ import type {
 import type {
   AnalyticsSummary,
   AttemptSummary,
+  AuthProviders,
   AuthResponse,
+  College,
   DuelChallengeCreate,
   DuelChallengeRead,
   DuelSummary,
@@ -35,6 +37,7 @@ import type {
   HeadToHead,
   HealthStatus,
   LeaderboardEntry,
+  ListCollegesParams,
   ListQuestionsParams,
   ProgressTrendPoint,
   PublicStats,
@@ -301,6 +304,83 @@ export const useLogin = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getLoginMutationOptions(options));
     }
+
+export const getGetAuthProvidersUrl = () => {
+
+
+
+
+  return `/api/auth/providers`
+}
+
+/**
+ * @summary Social sign-in providers that are configured (the browser flow itself starts at /auth/oauth/{provider}/start)
+ */
+export const getAuthProviders = async ( options?: Parameters<typeof customFetch>[1]): Promise<AuthProviders> => {
+
+  return customFetch<AuthProviders>(getGetAuthProvidersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuthProvidersQueryKey = () => {
+    return [
+    `/api/auth/providers`
+    ] as const;
+    }
+
+
+export const getGetAuthProvidersQueryOptions = <TData = Awaited<ReturnType<typeof getAuthProviders>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthProviders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuthProvidersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthProviders>>> = ({ signal }) => getAuthProviders({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthProviders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuthProvidersQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthProviders>>>
+export type GetAuthProvidersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Social sign-in providers that are configured (the browser flow itself starts at /auth/oauth/{provider}/start)
+ */
+
+export function useGetAuthProviders<TData = Awaited<ReturnType<typeof getAuthProviders>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthProviders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuthProvidersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getLogoutUrl = () => {
 
@@ -586,6 +666,90 @@ export function useGetPublicStats<TData = Awaited<ReturnType<typeof getPublicSta
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPublicStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListCollegesUrl = (params?: ListCollegesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/colleges?${stringifiedParams}` : `/api/colleges`
+}
+
+/**
+ * @summary Search the college list (names starting with the query come first)
+ */
+export const listColleges = async (params?: ListCollegesParams, options?: Parameters<typeof customFetch>[1]): Promise<College[]> => {
+
+  return customFetch<College[]>(getListCollegesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCollegesQueryKey = (params?: ListCollegesParams,) => {
+    return [
+    `/api/colleges`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListCollegesQueryOptions = <TData = Awaited<ReturnType<typeof listColleges>>, TError = ErrorType<unknown>>(params?: ListCollegesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listColleges>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCollegesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listColleges>>> = ({ signal }) => listColleges(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listColleges>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCollegesQueryResult = NonNullable<Awaited<ReturnType<typeof listColleges>>>
+export type ListCollegesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search the college list (names starting with the query come first)
+ */
+
+export function useListColleges<TData = Awaited<ReturnType<typeof listColleges>>, TError = ErrorType<unknown>>(
+ params?: ListCollegesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listColleges>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCollegesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

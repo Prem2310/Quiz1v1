@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { SocialButtons } from "@/components/auth/SocialButtons";
 import { Button } from "@/components/ui/button";
+import { CollegePicker } from "@/components/auth/CollegePicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
@@ -59,6 +61,7 @@ export default function Signup() {
         </>
       }
     >
+      <SocialButtons verb="Sign up" />
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
@@ -76,7 +79,7 @@ export default function Signup() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="college_name">College / university (optional)</Label>
-          <Input id="college_name" value={form.college_name} onChange={(e) => update("college_name", e.target.value)} placeholder="For the college leaderboard" />
+          <CollegePicker id="college_name" value={form.college_name} onChange={(name) => update("college_name", name)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>

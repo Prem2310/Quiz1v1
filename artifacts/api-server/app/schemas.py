@@ -23,6 +23,17 @@ class UserCreate(BaseModel):
     college_name: str | None = Field(default=None, max_length=180)
 
 
+class AuthProviders(BaseModel):
+    providers: list[Literal["google", "github"]]
+
+
+class CollegeRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class UserLogin(BaseModel):
     email_or_username: str = Field(min_length=3)
     password: str = Field(min_length=1)
