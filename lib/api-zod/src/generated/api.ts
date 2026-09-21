@@ -476,6 +476,31 @@ export const GetMyTopicInsightsResponse = zod.array(GetMyTopicInsightsResponseIt
 
 
 /**
+ * @summary Rating after each finished duel, oldest first (the profile rating graph)
+ */
+export const getMyRatingHistoryQueryLimitDefault = 100;
+export const getMyRatingHistoryQueryLimitMax = 500;
+
+
+
+export const GetMyRatingHistoryQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(getMyRatingHistoryQueryLimitMax).default(getMyRatingHistoryQueryLimitDefault)
+})
+
+export const GetMyRatingHistoryResponseItem = zod.object({
+  "duel_id": zod.int(),
+  "completed_at": zod.coerce.date().nullable(),
+  "rating_before": zod.number(),
+  "rating_after": zod.number(),
+  "result": zod.enum(['win', 'loss', 'draw']),
+  "opponent_name": zod.string(),
+  "my_score": zod.int(),
+  "opponent_score": zod.int()
+})
+export const GetMyRatingHistoryResponse = zod.array(GetMyRatingHistoryResponseItem)
+
+
+/**
  * @summary Get a daily accuracy trend for the progress chart
  */
 export const getMyProgressTrendQueryDaysDefault = 30;
@@ -583,6 +608,9 @@ export const GetDuelParams = zod.object({
   "duel_id": zod.coerce.number().int()
 })
 
+export const getDuelResponsePlayer1CorrectDefault = 0;
+export const getDuelResponsePlayer2CorrectDefault = 0;
+
 export const GetDuelResponse = zod.object({
   "id": zod.int(),
   "status": zod.string(),
@@ -605,6 +633,10 @@ export const GetDuelResponse = zod.object({
 }),
   "player1_score": zod.int(),
   "player2_score": zod.int(),
+  "player1_correct": zod.int().default(getDuelResponsePlayer1CorrectDefault),
+  "player2_correct": zod.int().default(getDuelResponsePlayer2CorrectDefault),
+  "player1_xp": zod.int().nullish(),
+  "player2_xp": zod.int().nullish(),
   "winner_id": zod.int().nullish(),
   "player1_rating_before": zod.number(),
   "player2_rating_before": zod.number(),
@@ -613,6 +645,42 @@ export const GetDuelResponse = zod.object({
   "started_at": zod.coerce.date().nullish(),
   "completed_at": zod.coerce.date().nullish()
 })
+
+
+/**
+ * @summary Every question of a finished duel with both players' answers and explanations
+ */
+export const GetDuelReviewParams = zod.object({
+  "duel_id": zod.coerce.number().int()
+})
+
+export const getDuelReviewResponsePlayer1PointsDefault = 0;
+export const getDuelReviewResponsePlayer2PointsDefault = 0;
+
+export const GetDuelReviewResponseItem = zod.object({
+  "question_id": zod.string(),
+  "text": zod.string(),
+  "text_html": zod.string().nullish(),
+  "directions_html": zod.string().nullish(),
+  "options": zod.unknown(),
+  "options_html": zod.unknown().optional(),
+  "correct_answer": zod.string().nullable(),
+  "explanation": zod.string().nullish(),
+  "explanation_html": zod.string().nullish(),
+  "player1": zod.object({
+  "selected_answer": zod.string().nullable(),
+  "is_correct": zod.boolean(),
+  "time_taken_seconds": zod.int().nullish(),
+  "points": zod.int().default(getDuelReviewResponsePlayer1PointsDefault)
+}),
+  "player2": zod.object({
+  "selected_answer": zod.string().nullable(),
+  "is_correct": zod.boolean(),
+  "time_taken_seconds": zod.int().nullish(),
+  "points": zod.int().default(getDuelReviewResponsePlayer2PointsDefault)
+})
+})
+export const GetDuelReviewResponse = zod.array(GetDuelReviewResponseItem)
 
 
 /**

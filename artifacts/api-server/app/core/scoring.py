@@ -10,6 +10,26 @@ if TYPE_CHECKING:
 
 ELO_K = 32.0
 
+# Duel scoring. A correct answer is worth BASE_POINTS plus a speed bonus that shrinks linearly to 0 at the time limit;
+# wrong or unanswered is 0. So points, not the number of correct answers, decide a duel: two fast answers can beat three slow ones.
+BASE_POINTS = 10
+SPEED_BONUS_MAX = 10
+XP_PER_CORRECT_DUEL = 4
+DUEL_XP_BY_OUTCOME = {"win": 20, "draw": 8, "loss": 4}
+
+
+def answer_points(correct: bool, seconds: int, time_limit: int) -> int:
+    """Points for one duel answer. Whole seconds, so it can be recomputed from the stored answer and always matches the score."""
+    if not correct:
+        return 0
+    remaining = max(0.0, (time_limit - seconds) / time_limit)
+    return BASE_POINTS + round(SPEED_BONUS_MAX * remaining)
+
+
+def duel_xp(correct: int, outcome: str) -> int:
+    """XP for a finished duel: per correct answer plus a bonus for the outcome ("win" | "draw" | "loss")."""
+    return correct * XP_PER_CORRECT_DUEL + DUEL_XP_BY_OUTCOME[outcome]
+
 # Rating -> league label, ascending thresholds (matiks-style tiers).
 LEAGUE_THRESHOLDS: list[tuple[float, str]] = [
     (1000, "Novice"),

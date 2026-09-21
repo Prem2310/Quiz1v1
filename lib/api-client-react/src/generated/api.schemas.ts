@@ -242,6 +242,34 @@ export interface QuestionReview {
   explanation_html?: string | null;
 }
 
+export interface DuelPlayerAnswer {
+  /** @nullable */
+  selected_answer: string | null;
+  is_correct: boolean;
+  /** @nullable */
+  time_taken_seconds?: number | null;
+  points?: number;
+}
+
+export interface DuelQuestionReview {
+  question_id: string;
+  text: string;
+  /** @nullable */
+  text_html?: string | null;
+  /** @nullable */
+  directions_html?: string | null;
+  options: unknown;
+  options_html?: unknown;
+  /** @nullable */
+  correct_answer: string | null;
+  /** @nullable */
+  explanation?: string | null;
+  /** @nullable */
+  explanation_html?: string | null;
+  player1: DuelPlayerAnswer;
+  player2: DuelPlayerAnswer;
+}
+
 export interface QuizComplete {
   attempt_id: number;
   score: number;
@@ -314,6 +342,27 @@ export interface ProgressTrendPoint {
   accuracy: number;
 }
 
+export type RatingPointResult = typeof RatingPointResult[keyof typeof RatingPointResult];
+
+
+export const RatingPointResult = {
+  win: 'win',
+  loss: 'loss',
+  draw: 'draw',
+} as const;
+
+export interface RatingPoint {
+  duel_id: number;
+  /** @nullable */
+  completed_at: string | null;
+  rating_before: number;
+  rating_after: number;
+  result: RatingPointResult;
+  opponent_name: string;
+  my_score: number;
+  opponent_score: number;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   user_id: number;
@@ -347,6 +396,12 @@ export interface DuelSummary {
   player2: DuelOpponent;
   player1_score: number;
   player2_score: number;
+  player1_correct?: number;
+  player2_correct?: number;
+  /** @nullable */
+  player1_xp?: number | null;
+  /** @nullable */
+  player2_xp?: number | null;
   /** @nullable */
   winner_id?: number | null;
   player1_rating_before: number;
@@ -525,6 +580,14 @@ export type GetMyTopicInsightsParams = {
  * @nullable
  */
 days?: number | null;
+};
+
+export type GetMyRatingHistoryParams = {
+/**
+ * @minimum 1
+ * @maximum 500
+ */
+limit?: number;
 };
 
 export type GetMyProgressTrendParams = {

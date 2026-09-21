@@ -27,11 +27,13 @@ import type {
   College,
   DuelChallengeCreate,
   DuelChallengeRead,
+  DuelQuestionReview,
   DuelSummary,
   FriendRequestRead,
   GetLeaderboardParams,
   GetMyHistoryParams,
   GetMyProgressTrendParams,
+  GetMyRatingHistoryParams,
   GetMyTopicInsightsParams,
   GetMyWeaknessParams,
   HeadToHead,
@@ -47,6 +49,7 @@ import type {
   QuizCompleteRequest,
   QuizCreate,
   QuizStart,
+  RatingPoint,
   SearchUsersParams,
   Subtopic,
   SubtopicWeakness,
@@ -1538,6 +1541,90 @@ export function useGetMyTopicInsights<TData = Awaited<ReturnType<typeof getMyTop
 
 
 
+export const getGetMyRatingHistoryUrl = (params?: GetMyRatingHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/analytics/me/rating-history?${stringifiedParams}` : `/api/analytics/me/rating-history`
+}
+
+/**
+ * @summary Rating after each finished duel, oldest first (the profile rating graph)
+ */
+export const getMyRatingHistory = async (params?: GetMyRatingHistoryParams, options?: Parameters<typeof customFetch>[1]): Promise<RatingPoint[]> => {
+
+  return customFetch<RatingPoint[]>(getGetMyRatingHistoryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyRatingHistoryQueryKey = (params?: GetMyRatingHistoryParams,) => {
+    return [
+    `/api/analytics/me/rating-history`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMyRatingHistoryQueryOptions = <TData = Awaited<ReturnType<typeof getMyRatingHistory>>, TError = ErrorType<unknown>>(params?: GetMyRatingHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyRatingHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyRatingHistoryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyRatingHistory>>> = ({ signal }) => getMyRatingHistory(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyRatingHistory>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyRatingHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof getMyRatingHistory>>>
+export type GetMyRatingHistoryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Rating after each finished duel, oldest first (the profile rating graph)
+ */
+
+export function useGetMyRatingHistory<TData = Awaited<ReturnType<typeof getMyRatingHistory>>, TError = ErrorType<unknown>>(
+ params?: GetMyRatingHistoryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyRatingHistory>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyRatingHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getGetMyProgressTrendUrl = (params?: GetMyProgressTrendParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -1932,6 +2019,83 @@ export function useGetDuel<TData = Awaited<ReturnType<typeof getDuel>>, TError =
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetDuelQueryOptions(duelId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetDuelReviewUrl = (duelId: number,) => {
+
+
+
+
+  return `/api/duels/${duelId}/review`
+}
+
+/**
+ * @summary Every question of a finished duel with both players' answers and explanations
+ */
+export const getDuelReview = async (duelId: number, options?: Parameters<typeof customFetch>[1]): Promise<DuelQuestionReview[]> => {
+
+  return customFetch<DuelQuestionReview[]>(getGetDuelReviewUrl(duelId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDuelReviewQueryKey = (duelId: number,) => {
+    return [
+    `/api/duels/${duelId}/review`
+    ] as const;
+    }
+
+
+export const getGetDuelReviewQueryOptions = <TData = Awaited<ReturnType<typeof getDuelReview>>, TError = ErrorType<unknown>>(duelId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDuelReview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDuelReviewQueryKey(duelId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDuelReview>>> = ({ signal }) => getDuelReview(duelId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: duelId !== null && duelId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDuelReview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDuelReviewQueryResult = NonNullable<Awaited<ReturnType<typeof getDuelReview>>>
+export type GetDuelReviewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Every question of a finished duel with both players' answers and explanations
+ */
+
+export function useGetDuelReview<TData = Awaited<ReturnType<typeof getDuelReview>>, TError = ErrorType<unknown>>(
+ duelId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDuelReview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDuelReviewQueryOptions(duelId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

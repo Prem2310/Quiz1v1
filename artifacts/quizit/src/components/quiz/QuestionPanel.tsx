@@ -29,7 +29,7 @@ export function QuestionPanel({ question, selected, feedback = {}, disabled, onS
       {question.directionsHtml ? (
         <SafeHtml
           html={question.directionsHtml}
-          className="mb-4 rounded-lg border border-border bg-surface/60 p-3 text-sm text-muted-foreground [&_img]:max-w-full [&_img]:h-auto [&_table]:w-full"
+          className="mb-4 rounded-lg border border-border bg-surface/60 p-3.5 text-base leading-relaxed text-foreground/85 sm:text-lg [&_img]:max-w-full [&_img]:h-auto [&_table]:w-full"
         />
       ) : null}
       {question.textHtml ? (

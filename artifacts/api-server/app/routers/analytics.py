@@ -7,8 +7,8 @@ from sqlalchemy import Integer, desc, func, or_, select
 from app.core.adaptive import get_catalog, load_profiles
 from app.core.scoring import league_for_rating
 from app.dependencies import CurrentUser, DbSession
-from app.models import FriendRequest, Question, QuizHistory, Subtopic, Topic, UserData, UserQuestionStats, UserQuizHistory, UserQuizResponse
-from app.schemas import AnalyticsSummary, AttemptSummary, LeaderboardEntry, LeaderboardScope, ProgressTrendPoint, SubtopicWeakness, TopicInsight
+from app.models import DuelMatch, FriendRequest, Question, QuizHistory, Subtopic, Topic, UserData, UserQuestionStats, UserQuizHistory, UserQuizResponse
+from app.schemas import AnalyticsSummary, AttemptSummary, LeaderboardEntry, LeaderboardScope, ProgressTrendPoint, RatingPoint, SubtopicWeakness, TopicInsight
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -206,6 +206,47 @@ async def my_topic_insights(current_user: CurrentUser, db: DbSession, days: int 
         )
         for topic_id, topic_name, total_answered, correct in rows
     ]
+
+
+@router.get("/me/rating-history", response_model=list[RatingPoint])
+async def my_rating_history(current_user: CurrentUser, db: DbSession, limit: int = Query(default=100, ge=1, le=500)) -> list[RatingPoint]:
+    """The user's rating after each finished duel, oldest first — the data behind the profile rating graph."""
+    me = current_user.id
+    matches = list(
+        (
+            await db.scalars(
+                select(DuelMatch)
+                .where(or_(DuelMatch.player1_id == me, DuelMatch.player2_id == me), DuelMatch.status == "completed", DuelMatch.player1_rating_after.is_not(None))
+                .order_by(desc(DuelMatch.completed_at))
+                .limit(limit)
+            )
+        ).all()
+    )
+    if not matches:
+        return []
+    opponent_ids = {m.player2_id if m.player1_id == me else m.player1_id for m in matches}
+    names = {u.id: u.name for u in (await db.scalars(select(UserData).where(UserData.id.in_(opponent_ids)))).all()}
+    attempt_ids = {a for m in matches for a in (m.player1_attempt_id, m.player2_attempt_id) if a}
+    scores = {a.id: a.points_scored for a in (await db.scalars(select(UserQuizHistory).where(UserQuizHistory.id.in_(attempt_ids)))).all()} if attempt_ids else {}
+
+    points: list[RatingPoint] = []
+    for m in reversed(matches):
+        is_p1 = m.player1_id == me
+        opponent_id = m.player2_id if is_p1 else m.player1_id
+        my_attempt, their_attempt = (m.player1_attempt_id, m.player2_attempt_id) if is_p1 else (m.player2_attempt_id, m.player1_attempt_id)
+        points.append(
+            RatingPoint(
+                duel_id=m.id,
+                completed_at=m.completed_at,
+                rating_before=m.player1_rating_before if is_p1 else m.player2_rating_before,
+                rating_after=(m.player1_rating_after if is_p1 else m.player2_rating_after) or 0,
+                result="draw" if m.winner_id is None else "win" if m.winner_id == me else "loss",
+                opponent_name=names.get(opponent_id, "?"),
+                my_score=scores.get(my_attempt, 0),
+                opponent_score=scores.get(their_attempt, 0),
+            )
+        )
+    return points
 
 
 @router.get("/me/trend", response_model=list[ProgressTrendPoint])

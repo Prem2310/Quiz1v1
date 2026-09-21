@@ -20,28 +20,22 @@ from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconn
 from sqlalchemy import func, insert, or_, select
 
 from app.core.adaptive import pair_filter, record_question_stats, select_duel_questions
-from app.core.scoring import bump_daily_streak, elo_deltas, league_for_rating, rematch_factor
+from app.core.scoring import answer_points, bump_daily_streak, duel_xp, elo_deltas, league_for_rating, rematch_factor
 from app.core.security import decode_access_token
 from app.db import SessionLocal
 from app.dependencies import CurrentUser, DbSession
 from app.models import DuelChallenge, DuelMatch, Question, QuizHistory, QuizQuestion, Topic, UserData, UserQuizHistory, UserQuizResponse
-from app.schemas import DuelChallengeCreate, DuelChallengeRead, DuelOpponent, DuelSummary, HeadToHead, HeadToHeadResult
+from app.schemas import DuelChallengeCreate, DuelChallengeRead, DuelOpponent, DuelPlayerAnswer, DuelQuestionReview, DuelSummary, HeadToHead, HeadToHeadResult
 
 router = APIRouter(tags=["duels"])
 
 DUEL_TIME_PER_QUESTION = 15
 DUEL_NUM_QUESTIONS = 10
-BASE_POINTS = 10
-SPEED_BONUS_MAX = 10
 REVEAL_PAUSE_SECONDS = 1.5
 QUEUE_MIN_TOLERANCE = 75
 QUEUE_MAX_TOLERANCE = 400
 QUEUE_WIDEN_PER_SECOND = 20
 CHALLENGE_EXPIRY_SECONDS = 90
-XP_PER_CORRECT_DUEL = 4
-DUEL_WIN_XP = 20
-DUEL_DRAW_XP = 8
-DUEL_LOSS_XP = 4
 REMATCH_AVOID_SECONDS = 20  # prefer someone new for this long before matching the same opponent again
 REMATCH_WINDOW = timedelta(minutes=30)
 ELO_REMATCH_WINDOW = timedelta(hours=24)
@@ -262,6 +256,7 @@ class DuelSession:
         self.finished = False
         self.question_started_at = 0.0
         self._current_index = -1
+        self.task: asyncio.Task | None = None
 
     def add_player(self, user_id: int, websocket: WebSocket) -> None:
         self.players[user_id] = PlayerConn(user_id=user_id, websocket=websocket)
@@ -279,6 +274,8 @@ class DuelSession:
         if self.finished:
             return
         self.finished = True
+        if self.task is not None and self.task is not asyncio.current_task() and not self.task.done():
+            self.task.cancel()  # stop the question loop: nobody is left to play it
         async with SessionLocal() as db:
             match = await db.get(DuelMatch, self.duel_id)
             if match is not None:
@@ -297,6 +294,10 @@ class DuelSession:
     def scores_payload(self) -> dict[str, int]:
         return {str(uid): conn.score for uid, conn in self.players.items()}
 
+    def answered_payload(self) -> list[str]:
+        """Who has locked in an answer for the current question (lets the UI show "opponent answered")."""
+        return [str(uid) for uid, conn in self.players.items() if conn.answered_index == self._current_index]
+
     async def submit_answer(self, user_id: int, index: int, selected: str | None) -> None:
         conn = self.players.get(user_id)
         if conn is None or index != self._current_index or conn.answered_index == index:
@@ -307,15 +308,14 @@ class DuelSession:
             (question.answer_letter or "").strip().lower(),
         }
         conn.answered_index = index
-        elapsed = max(0.0, time.monotonic() - self.question_started_at)
-        conn.answers[index] = (selected, is_correct, round(elapsed))
+        seconds = round(max(0.0, time.monotonic() - self.question_started_at))
+        conn.answers[index] = (selected, is_correct, seconds)
         if is_correct:
-            remaining_fraction = max(0.0, (self.time_per_question - elapsed) / self.time_per_question)
-            conn.score += BASE_POINTS + round(SPEED_BONUS_MAX * remaining_fraction)
+            conn.score += answer_points(True, seconds, self.time_per_question)
             conn.correct += 1
         else:
             conn.incorrect += 1
-        await self.broadcast({"type": "score_update", "scores": self.scores_payload()})
+        await self.broadcast({"type": "score_update", "scores": self.scores_payload(), "answered": self.answered_payload()})
         self.answer_event.set()
 
     async def run(self) -> None:
@@ -366,15 +366,18 @@ class DuelSession:
 
     async def _finish(self) -> None:
         self.finished = True
-        player_ids = list(self.players.keys())
-        p1_id, p2_id = player_ids[0], player_ids[1]
-        p1, p2 = self.players[p1_id], self.players[p2_id]
 
         async with SessionLocal() as db:
             match = await db.get(DuelMatch, self.duel_id)
+            if match is None:
+                return
+            # Slots come from the match record, not socket join order: whoever connected first is not necessarily player1,
+            # and every match.player1_* column below has to describe match.player1_id.
+            p1_id, p2_id = match.player1_id, match.player2_id
+            p1, p2 = self.players[p1_id], self.players[p2_id]
             u1 = await db.get(UserData, p1_id)
             u2 = await db.get(UserData, p2_id)
-            if match is None or u1 is None or u2 is None:
+            if u1 is None or u2 is None:
                 return
 
             if p1.score == p2.score:
@@ -394,13 +397,15 @@ class DuelSession:
                 )
             )
             factor = rematch_factor(int(rematches or 0))
-            delta1, delta2 = elo_deltas(u1.user_rating, u2.user_rating, score_for_p1)
-            delta1, delta2 = delta1 * factor, delta2 * factor
+            # The rating Elo really starts from. It can differ from the queue-time rating stored at creation when either
+            # player finished another duel in between, so record it: rating_before + delta == rating_after, always.
+            before1, before2 = u1.user_rating, u2.user_rating
+            delta1, delta2 = elo_deltas(before1, before2, score_for_p1)
+            delta1, delta2 = round(delta1 * factor, 1), round(delta2 * factor, 1)
             xp_gained: dict[int, int] = {}
             for user, conn, delta in ((u1, p1, delta1), (u2, p2, delta2)):
-                is_winner = winner_id == user.id
-                is_draw = winner_id is None
-                xp = conn.correct * XP_PER_CORRECT_DUEL + (DUEL_WIN_XP if is_winner else DUEL_DRAW_XP if is_draw else DUEL_LOSS_XP)
+                outcome = "draw" if winner_id is None else "win" if winner_id == user.id else "loss"
+                xp = duel_xp(conn.correct, outcome)
                 xp_gained[user.id] = xp
                 attempt = UserQuizHistory(
                     user_id=user.id,
@@ -448,6 +453,7 @@ class DuelSession:
 
             match.status = "completed"
             match.winner_id = winner_id
+            match.player1_rating_before, match.player2_rating_before = before1, before2
             match.player1_rating_after = u1.user_rating
             match.player2_rating_after = u2.user_rating
             match.completed_at = now
@@ -460,7 +466,7 @@ class DuelSession:
                     "xp_gained": {str(uid): xp for uid, xp in xp_gained.items()},
                     "winner_id": winner_id,
                     "rating_after": {str(p1_id): u1.user_rating, str(p2_id): u2.user_rating},
-                    "rating_delta": {str(p1_id): round(delta1, 1), str(p2_id): round(delta2, 1)},
+                    "rating_delta": {str(p1_id): delta1, str(p2_id): delta2},
                 }
             )
 
@@ -520,6 +526,7 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
     game_task: asyncio.Task | None = None
     if should_start:
         game_task = asyncio.create_task(session.run())
+        session.task = game_task
 
     try:
         while True:
@@ -529,15 +536,18 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
             if message.get("type") == "answer":
                 await session.submit_answer(user_id, int(message.get("index", -1)), message.get("answer"))
     except WebSocketDisconnect:
-        if not session.finished:
+        if session.started and not session.finished:
+            # Either player leaving ends a running duel. (Before, only the player whose connection started it did:
+            # if the other left, the loop kept running and the leaver's duel was rated as a normal result.)
             opponent = session.opponent_of(user_id)
             if opponent is not None:
                 try:
                     await opponent.websocket.send_json({"type": "opponent_left"})
                 except Exception:
                     pass
-            if game_task is not None:
-                await session.abort()
+            await session.abort()
+        elif not session.started and getattr(session.players.get(user_id), "websocket", None) is websocket:
+            del session.players[user_id]  # left while waiting: a stale socket must not count as "joined"
     finally:
         if game_task is not None and not game_task.done():
             game_task.cancel()
@@ -548,8 +558,7 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
 # --------------------------------------------------------------------------
 
 
-async def _opponent_read(db: DbSession, user_id: int, rating: float) -> DuelOpponent:
-    user = await db.get(UserData, user_id)
+def _opponent_read(user: UserData | None, user_id: int, rating: float) -> DuelOpponent:
     return DuelOpponent(
         user_id=user_id,
         username=user.username if user else "?",
@@ -565,17 +574,17 @@ async def get_duel(duel_id: int, current_user: CurrentUser, db: DbSession) -> Du
     if match is None or current_user.id not in (match.player1_id, match.player2_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Duel not found")
 
-    scores = {"p1": 0, "p2": 0}
-    if match.player1_attempt_id:
-        attempt = await db.get(UserQuizHistory, match.player1_attempt_id)
-        scores["p1"] = attempt.points_scored if attempt else 0
-    if match.player2_attempt_id:
-        attempt = await db.get(UserQuizHistory, match.player2_attempt_id)
-        scores["p2"] = attempt.points_scored if attempt else 0
-
-    player1 = await _opponent_read(db, match.player1_id, match.player1_rating_after or match.player1_rating_before)
-    player2 = await _opponent_read(db, match.player2_id, match.player2_rating_after or match.player2_rating_before)
+    # One query for both attempts and one for both players (the remote DB's round trips dominate latency).
+    attempt_ids = [i for i in (match.player1_attempt_id, match.player2_attempt_id) if i]
+    attempts = {a.id: a for a in (await db.scalars(select(UserQuizHistory).where(UserQuizHistory.id.in_(attempt_ids)))).all()} if attempt_ids else {}
+    users = {u.id: u for u in (await db.scalars(select(UserData).where(UserData.id.in_([match.player1_id, match.player2_id])))).all()}
     quiz = await db.get(QuizHistory, match.quiz_history_id)
+    a1, a2 = attempts.get(match.player1_attempt_id), attempts.get(match.player2_attempt_id)
+
+    def xp_of(attempt: UserQuizHistory | None, user_id: int) -> int | None:
+        if attempt is None or match.status != "completed":
+            return None
+        return duel_xp(attempt.correct_count, "draw" if match.winner_id is None else "win" if match.winner_id == user_id else "loss")
 
     return DuelSummary(
         id=match.id,
@@ -583,10 +592,14 @@ async def get_duel(duel_id: int, current_user: CurrentUser, db: DbSession) -> Du
         quiz_history_id=match.quiz_history_id,
         room_id=quiz.room_id if quiz else None,
         topic_id=match.topic_id,
-        player1=player1,
-        player2=player2,
-        player1_score=scores["p1"],
-        player2_score=scores["p2"],
+        player1=_opponent_read(users.get(match.player1_id), match.player1_id, match.player1_rating_after or match.player1_rating_before),
+        player2=_opponent_read(users.get(match.player2_id), match.player2_id, match.player2_rating_after or match.player2_rating_before),
+        player1_score=a1.points_scored if a1 else 0,
+        player2_score=a2.points_scored if a2 else 0,
+        player1_correct=a1.correct_count if a1 else 0,
+        player2_correct=a2.correct_count if a2 else 0,
+        player1_xp=xp_of(a1, match.player1_id),
+        player2_xp=xp_of(a2, match.player2_id),
         winner_id=match.winner_id,
         player1_rating_before=match.player1_rating_before,
         player2_rating_before=match.player2_rating_before,
@@ -595,6 +608,59 @@ async def get_duel(duel_id: int, current_user: CurrentUser, db: DbSession) -> Du
         started_at=match.started_at,
         completed_at=match.completed_at,
     )
+
+
+@router.get("/duels/{duel_id}/review", response_model=list[DuelQuestionReview])
+async def duel_review(duel_id: int, current_user: CurrentUser, db: DbSession) -> list[DuelQuestionReview]:
+    """Every question of a finished duel with both players' answers and the explanation."""
+    match = await db.get(DuelMatch, duel_id)
+    if match is None or current_user.id not in (match.player1_id, match.player2_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Duel not found")
+    if match.status != "completed":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="The duel isn't finished yet")
+
+    questions = (
+        await db.scalars(
+            select(Question)
+            .join(QuizQuestion, QuizQuestion.question_id == Question.id)
+            .where(QuizQuestion.quiz_history_id == match.quiz_history_id)
+            .order_by(QuizQuestion.question_order)
+        )
+    ).all()
+
+    async def answers_of(attempt_id: int | None) -> dict[str, UserQuizResponse]:
+        if attempt_id is None:
+            return {}
+        rows = await db.scalars(select(UserQuizResponse).where(UserQuizResponse.user_quiz_history_id == attempt_id))
+        return {row.question_id: row for row in rows}
+
+    quiz = await db.get(QuizHistory, match.quiz_history_id)
+    time_limit = (quiz.time_per_question if quiz else None) or DUEL_TIME_PER_QUESTION
+
+    def answer_of(row: UserQuizResponse | None) -> DuelPlayerAnswer:
+        if row is None:
+            return DuelPlayerAnswer(selected_answer=None, is_correct=False)
+        ok, seconds = bool(row.is_correct), row.time_taken_seconds if row.time_taken_seconds is not None else time_limit
+        return DuelPlayerAnswer(selected_answer=row.selected_answer, is_correct=ok, time_taken_seconds=row.time_taken_seconds, points=answer_points(ok, seconds, time_limit))
+
+    p1 = await answers_of(match.player1_attempt_id)
+    p2 = await answers_of(match.player2_attempt_id)
+    return [
+        DuelQuestionReview(
+            question_id=q.id,
+            text=q.text,
+            text_html=q.text_html,
+            directions_html=q.directions_html,
+            options=q.options,
+            options_html=q.options_html,
+            correct_answer=q.answer_letter or q.answer,
+            explanation=q.explanation,
+            explanation_html=q.explanation_html,
+            player1=answer_of(p1.get(q.id)),
+            player2=answer_of(p2.get(q.id)),
+        )
+        for q in questions
+    ]
 
 
 @router.get("/duels/head-to-head/{opponent_id}", response_model=HeadToHead)

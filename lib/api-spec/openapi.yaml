@@ -363,6 +363,30 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TopicInsight"
+  /analytics/me/rating-history:
+    get:
+      operationId: getMyRatingHistory
+      tags: [analytics]
+      summary: Rating after each finished duel, oldest first (the profile rating graph)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        "200":
+          description: One point per finished duel
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RatingPoint"
   /analytics/me/trend:
     get:
       operationId: getMyProgressTrend
@@ -477,6 +501,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DuelSummary"
+  /duels/{duel_id}/review:
+    get:
+      operationId: getDuelReview
+      tags: [duels]
+      summary: Every question of a finished duel with both players' answers and explanations
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/DuelId"
+      responses:
+        "200":
+          description: Per-question review
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DuelQuestionReview"
   /duels/challenges:
     post:
       operationId: createChallenge
@@ -919,6 +961,31 @@ components:
         is_correct: { type: boolean }
         explanation: { type: [string, "null"] }
         explanation_html: { type: [string, "null"] }
+    DuelPlayerAnswer:
+      type: object
+      required: [selected_answer, is_correct]
+      properties:
+        selected_answer: { type: [string, "null"] }
+        is_correct: { type: boolean }
+        time_taken_seconds: { type: [integer, "null"] }
+        points: { type: integer, default: 0 }
+    DuelQuestionReview:
+      type: object
+      required: [question_id, text, options, correct_answer, player1, player2]
+      properties:
+        question_id: { type: string }
+        text: { type: string }
+        text_html: { type: [string, "null"] }
+        directions_html: { type: [string, "null"] }
+        options: {}
+        options_html: {}
+        correct_answer: { type: [string, "null"] }
+        explanation: { type: [string, "null"] }
+        explanation_html: { type: [string, "null"] }
+        player1:
+          $ref: "#/components/schemas/DuelPlayerAnswer"
+        player2:
+          $ref: "#/components/schemas/DuelPlayerAnswer"
     QuizComplete:
       type: object
       required: [attempt_id, score, total_correct, total_incorrect, accuracy]
@@ -998,6 +1065,18 @@ components:
         correct: { type: integer }
         incorrect: { type: integer }
         accuracy: { type: number }
+    RatingPoint:
+      type: object
+      required: [duel_id, completed_at, rating_before, rating_after, result, opponent_name, my_score, opponent_score]
+      properties:
+        duel_id: { type: integer }
+        completed_at: { type: [string, "null"], format: date-time }
+        rating_before: { type: number }
+        rating_after: { type: number }
+        result: { type: string, enum: [win, loss, draw] }
+        opponent_name: { type: string }
+        my_score: { type: integer }
+        opponent_score: { type: integer }
     LeaderboardEntry:
       type: object
       required: [rank, user_id, username, name, total_points, user_rating, league]
@@ -1039,6 +1118,10 @@ components:
           $ref: "#/components/schemas/DuelOpponent"
         player1_score: { type: integer }
         player2_score: { type: integer }
+        player1_correct: { type: integer, default: 0 }
+        player2_correct: { type: integer, default: 0 }
+        player1_xp: { type: [integer, "null"] }
+        player2_xp: { type: [integer, "null"] }
         winner_id: { type: [integer, "null"] }
         player1_rating_before: { type: number }
         player2_rating_before: { type: number }
