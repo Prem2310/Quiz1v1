@@ -18,7 +18,7 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? '/';
 
 // SEO: canonical/OG URLs, sitemap.xml and robots.txt all derive from one site URL, so a domain change is one env var (VITE_SITE_URL).
-const SITE_URL = (process.env.VITE_SITE_URL ?? 'https://quiz1v1.netlify.app').replace(/\/+$/, '');
+const SITE_URL = (process.env.VITE_SITE_URL ?? 'https://quiz1v1.tech').replace(/\/+$/, '');
 const PUBLIC_PATHS = ['/', ...TOPICS.map((t) => `/topics/${t.slug}`), '/signup', '/login'];
 const PRIVATE_PATHS = ['/arena', '/practice', '/duel/', '/leaderboard', '/friends', '/profile', '/progress', '/settings'];
 
