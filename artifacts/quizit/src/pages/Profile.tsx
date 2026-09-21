@@ -3,6 +3,7 @@ import { BarChart3, ChevronRight, Flame, LogOut, Settings, Swords, Target, Troph
 import { useGetMyHistory, useGetMyTopicInsights } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
+import { Credit } from "@/components/common/Credit";
 import { EmptyState, LoadingState } from "@/components/common/StateBlocks";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/common/Motion";
 import { initialsOf } from "@/components/layout/AppShell";
@@ -124,6 +125,8 @@ export default function Profile() {
           </StaggerGroup>
         )}
       </Reveal>
+
+      <Credit className="pb-2 text-center text-xs text-muted-foreground lg:hidden" />
     </div>
   );
 }

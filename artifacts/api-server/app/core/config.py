@@ -34,8 +34,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7
 
+    # Comma-separated browser origins allowed to call the API with credentials. "*" cannot be combined with
+    # credentials, so the default is the production site itself (quiz1v1.tech), not a wildcard.
     cors_origins: str = Field(
-        default="*",
+        default="https://quiz1v1.tech,https://www.quiz1v1.tech",
         validation_alias="CORS_ORIGINS",
     )
 
@@ -64,7 +66,8 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def normalize_cors_origins(cls, value: str) -> str:
-        return ",".join(origin.strip() for origin in value.split(",") if origin.strip())
+        # Browsers send Origin without a trailing slash, so "https://site.com/" would never match.
+        return ",".join(origin.strip().rstrip("/") for origin in value.split(",") if origin.strip())
 
     @property
     def cors_origin_list(self) -> list[str]:

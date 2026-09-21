@@ -22,7 +22,7 @@ export default function Signup() {
   }
 
   useEffect(() => {
-    if (isAuthenticated) navigate("/arena", { replace: true });
+    if (isAuthenticated) navigate("/", { replace: true });
   }, [isAuthenticated, navigate]);
 
   async function onSubmit(e: FormEvent) {

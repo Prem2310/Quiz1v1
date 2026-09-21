@@ -46,12 +46,14 @@ app.add_middleware(
     CORSMiddleware,
     # Wildcard origins cannot be used with credentialed cookie requests.
     allow_origins=[origin for origin in settings.cors_origin_list if origin != "*"],
-    # Netlify deploy previews and local dev use origins that are not stable
-    # enough to enumerate in the Render environment variables.
+    # Netlify/Vercel deploy previews and local dev use origins that are not stable
+    # enough to enumerate in the Render environment variables. quiz1v1.tech is the
+    # production site: listed here too so it works even if CORS_ORIGINS is missed.
     allow_origin_regex=(
         r"^https?://localhost(:\d+)?$"
         r"|^https://[a-z0-9-]+\.netlify\.app$"
         r"|^https://[a-z0-9-]+\.vercel\.app$"
+        r"|^https://(www\.)?quiz1v1\.tech$"
     ),
     allow_credentials=True,
     allow_methods=["*"],

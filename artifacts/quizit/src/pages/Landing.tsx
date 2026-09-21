@@ -1,9 +1,11 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { BarChart3, Flame, Swords, Target, Trophy } from "lucide-react";
-import { Logo } from "@/components/brand/Logo";
+import { BarChart3, Flame, Github, Swords, Target, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
+import { PublicShell } from "@/components/layout/PublicShell";
+import { AUTHOR_NAME, AUTHOR_URL, CONTRIBUTING_URL, ISSUES_URL, REPO_URL } from "@/content/project";
+import { TOPICS } from "@/content/topics";
 import { useAuth } from "@/stores/auth";
 import { usePublicStats } from "@/hooks/usePublicStats";
 
@@ -36,15 +38,6 @@ const MIN_ONLINE_SHOWN = 3;
 
 type Stat = { value: number; label: string; suffix?: string; live?: boolean };
 
-const TOPICS = [
-  { name: "Quantitative aptitude", body: "Percentages, ratios, time and work, averages and the arithmetic that placement tests lean on." },
-  { name: "Data interpretation", body: "Tables, bar charts, line graphs and pie charts, read fast and answered accurately." },
-  { name: "Verbal ability", body: "Grammar, vocabulary, synonyms, antonyms and sentence correction." },
-  { name: "Logical reasoning", body: "Series, arrangements, syllogisms and puzzles that reward a clear head." },
-  { name: "Verbal reasoning", body: "Analogies, classification and statement-based reasoning in words." },
-  { name: "Non-verbal reasoning", body: "Figure series, patterns and analogies with no words to lean on." },
-];
-
 // Rendered on the page and mirrored into FAQPage structured data below, so the markup always matches what people can read.
 const FAQ = [
   {
@@ -52,6 +45,14 @@ const FAQ = [
     a: "quiz1v1 is a free aptitude practice platform for campus placements and competitive exams such as banking and SSC. Drill topic-based questions on your own, then challenge other students to live 1v1 duels with a rating, leagues and a leaderboard.",
   },
   { q: "Is quiz1v1 free?", a: "Yes. It is free to use, with no credit card. Create an account and start practising straight away." },
+  {
+    q: "How is quiz1v1 different from an aptitude question bank?",
+    a: "A question bank is a list of questions to read through. quiz1v1 turns practice into a game: live 1v1 duels against other students, a rating and leaderboard, and missed questions that come back sooner until you get them right.",
+  },
+  {
+    q: "Which exams can I prepare for with quiz1v1?",
+    a: "It is built for campus placement aptitude tests and for competitive exams that test the same skills, such as the quantitative, reasoning and verbal sections of banking and SSC-style papers.",
+  },
   {
     q: "Which topics can I practise?",
     a: "Quantitative aptitude, data interpretation, verbal ability, logical reasoning, verbal reasoning and non-verbal reasoning. Each has its own accuracy tracking on your progress page.",
@@ -68,6 +69,10 @@ const FAQ = [
   {
     q: "Can I compete with my friends or my college?",
     a: "Yes. Add friends and challenge them to a duel directly, and compare yourself on the leaderboard globally or against your own college.",
+  },
+  {
+    q: "Who built quiz1v1, and is it open source?",
+    a: "quiz1v1 is built by Prem2310 and the code is open source under the MIT license. Bug reports, ideas and pull requests are welcome on GitHub. The question content is sourced from IndiaBix and is not covered by that license.",
   },
 ];
 
@@ -93,29 +98,7 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-dvh bg-background">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
-        <Link href="/" aria-label="Go to homepage">
-          <Logo />
-        </Link>
-        <nav className="flex items-center gap-2">
-          {isAuthenticated ? (
-            <Button size="sm" asChild>
-              <Link href="/arena">Go to Arena</Link>
-            </Button>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Log in</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/signup">Sign up free</Link>
-              </Button>
-            </>
-          )}
-        </nav>
-      </header>
-
+    <PublicShell>
       <main>
         <section className="px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
@@ -238,14 +221,14 @@ export default function Landing() {
             What you can practise
           </h2>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            Six topic areas from the IndiaBix question bank, each with its own accuracy tracking, so you can see which one is holding your score back.
+            Six topic areas from the IndiaBix question bank, each with its own accuracy tracking. Open one to see what it covers and how to get faster at it.
           </p>
           <div className="mt-5 grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
             {TOPICS.map((topic) => (
-              <div key={topic.name} className="bg-surface p-5">
-                <h3 className="font-display text-base uppercase tracking-wide text-foreground">{topic.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{topic.body}</p>
-              </div>
+              <Link key={topic.slug} href={`/topics/${topic.slug}`} className="group block bg-surface p-5 transition-colors hover:bg-card">
+                <h3 className="font-display text-base uppercase tracking-wide text-foreground transition-colors group-hover:text-primary">{topic.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{topic.blurb}</p>
+              </Link>
             ))}
           </div>
         </section>
@@ -270,6 +253,41 @@ export default function Landing() {
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
         </section>
 
+        <section aria-labelledby="contribute-heading" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+          <div className="grid gap-6 border-2 border-border bg-surface p-6 sm:p-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-center">
+            <div>
+              <h2 id="contribute-heading" className="font-display text-2xl uppercase tracking-wide text-foreground sm:text-3xl">
+                Open to contribute
+              </h2>
+              <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+                quiz1v1 is built by{" "}
+                <a href={AUTHOR_URL} target="_blank" rel="noreferrer noopener" className="font-medium text-foreground underline-offset-4 hover:underline">
+                  {AUTHOR_NAME}
+                </a>{" "}
+                and its code is open source under the MIT license. Found a bug, want a new topic page, or have an idea for a duel mode? Issues and pull
+                requests are welcome.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 lg:justify-end">
+              <Button asChild>
+                <a href={REPO_URL} target="_blank" rel="noreferrer noopener">
+                  <Github /> View on GitHub
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={ISSUES_URL} target="_blank" rel="noreferrer noopener">
+                  Report an issue
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={CONTRIBUTING_URL} target="_blank" rel="noreferrer noopener">
+                  How to contribute
+                </a>
+              </Button>
+            </div>
+          </div>
+        </section>
+
         <section className="px-4 pb-24 sm:px-6">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 border-2 border-primary bg-primary/10 p-10 text-center">
             <Flame className="h-8 w-8 text-warning" />
@@ -280,40 +298,13 @@ export default function Landing() {
               Free to use. No credit card. Just questions, a rating, and people to beat.
             </p>
             <Button size="lg" asChild>
-              <Link href={isAuthenticated ? "/arena" : "/signup"}>
+              <Link href={isAuthenticated ? "/" : "/signup"}>
                 {isAuthenticated ? "Enter the arena" : "Create your free account"}
               </Link>
             </Button>
           </div>
         </section>
       </main>
-
-      <footer className="border-t border-border px-4 py-8 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 text-center text-xs text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
-          <Logo compact />
-          <p>
-            Question bank sourced from{" "}
-            <a
-              href="https://www.indiabix.com"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              IndiaBix
-            </a>
-            . All credit for question content belongs to IndiaBix.
-          </p>
-          <nav aria-label="Footer" className="flex items-center gap-4">
-            <Link href="/signup" className="hover:text-foreground">
-              Sign up
-            </Link>
-            <Link href="/login" className="hover:text-foreground">
-              Log in
-            </Link>
-            <span>© {new Date().getFullYear()} quiz1v1</span>
-          </nav>
-        </div>
-      </footer>
-    </div>
+    </PublicShell>
   );
 }

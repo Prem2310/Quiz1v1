@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, type Plugin } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
+import { TOPICS } from './src/content/topics';
 
 // PORT/BASE_PATH are injected by the Replit runtime; default them for plain
 // local dev (`pnpm --filter quizit dev`) so the app runs outside Replit too.
@@ -17,13 +18,14 @@ if (Number.isNaN(port) || port <= 0) {
 const basePath = process.env.BASE_PATH ?? '/';
 
 // SEO: canonical/OG URLs, sitemap.xml and robots.txt all derive from one site URL, so a domain change is one env var (VITE_SITE_URL).
-const SITE_URL = (process.env.VITE_SITE_URL ?? 'https://quiz1v1.netlify.app').replace(/\/+$/, '');
-const PUBLIC_PATHS = ['/', '/signup', '/login'];
+const SITE_URL = (process.env.VITE_SITE_URL ?? 'https://quiz1v1.tech').replace(/\/+$/, '');
+const PUBLIC_PATHS = ['/', ...TOPICS.map((t) => `/topics/${t.slug}`), '/signup', '/login'];
 const PRIVATE_PATHS = ['/arena', '/practice', '/duel/', '/leaderboard', '/friends', '/profile', '/progress', '/settings'];
 
 const seo = (): Plugin => ({
   name: 'quiz1v1-seo',
-  transformIndexHtml: (html) => html.replace(/__SITE_URL__/g, SITE_URL),
+  // order: 'pre' so the absolute URL is in place before Vite rebases <link href> (it would otherwise mangle the canonical on nested routes)
+  transformIndexHtml: { order: 'pre', handler: (html) => html.replace(/__SITE_URL__/g, SITE_URL) },
   generateBundle() {
     const urls = PUBLIC_PATHS.map((p) => `  <url><loc>${SITE_URL}${p}</loc></url>`).join('\n');
     this.emitFile({
@@ -63,12 +65,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
-      '@assets': path.resolve(
-        import.meta.dirname,
-        '..',
-        '..',
-        'attached_assets',
-      ),
     },
     dedupe: ['react', 'react-dom'],
   },

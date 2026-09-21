@@ -17,15 +17,16 @@ import type { ReactNode } from "react";
 import { Logo, LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Credit } from "@/components/common/Credit";
 import { NotificationsMenu } from "@/components/social/NotificationsMenu";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/stores/auth";
 
-type NavPath = "/arena" | "/duel/matchmaking" | "/practice" | "/leaderboard" | "/progress" | "/friends" | "/profile" | "/settings";
+type NavPath = "/" | "/duel/matchmaking" | "/practice" | "/leaderboard" | "/progress" | "/friends" | "/profile" | "/settings";
 
 const PRIMARY_NAV: Array<{ to: NavPath; label: string; icon: typeof LayoutGrid }> = [
-  { to: "/arena", label: "Arena", icon: LayoutGrid },
+  { to: "/", label: "Arena", icon: LayoutGrid },
   { to: "/duel/matchmaking", label: "Duel", icon: Swords },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -39,12 +40,15 @@ const SECONDARY_NAV: Array<{ to: NavPath; label: string; icon: typeof LayoutGrid
 ];
 
 const MOBILE_NAV: Array<{ to: NavPath; label: string; icon: typeof LayoutGrid }> = [
-  { to: "/arena", label: "Arena", icon: LayoutGrid },
+  { to: "/", label: "Arena", icon: LayoutGrid },
   { to: "/duel/matchmaking", label: "Duel", icon: Swords },
   { to: "/practice", label: "Practice", icon: Target },
   { to: "/leaderboard", label: "Ranks", icon: Trophy },
   { to: "/profile", label: "Profile", icon: UserIcon },
 ];
+
+/** "/" is the dashboard (the Arena tab), so it must match exactly: every path starts with "/". */
+const isActive = (pathname: string, to: NavPath) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
 
 export function initialsOf(value: string): string {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -72,7 +76,7 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
   const [pathname] = useLocation();
   const { user, logout } = useAuth();
   const displayName = user?.name || user?.username || "Player";
-  const section = [...PRIMARY_NAV, ...SECONDARY_NAV].find((item) => pathname.startsWith(item.to))?.label ?? (pathname.startsWith("/duel") ? "Duel" : null);
+  const section = [...PRIMARY_NAV, ...SECONDARY_NAV].find((item) => isActive(pathname, item.to))?.label ?? (pathname.startsWith("/duel") ? "Duel" : null);
   usePageMeta(section ? `${section} · quiz1v1` : "quiz1v1", { noindex: true }); // signed-in screens are private, so keep them out of search
 
   if (bare) {
@@ -90,18 +94,18 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-surface-2 lg:flex">
         <div className="flex items-center justify-between px-5 py-5">
-          <Link href="/arena" aria-label="Go to Arena">
+          <Link href="/" aria-label="Go to dashboard">
             <Logo />
           </Link>
           <NotificationsMenu />
         </div>
         <nav className="flex flex-1 flex-col gap-1 px-3" aria-label="Main">
           {PRIMARY_NAV.map((item) => (
-            <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+            <NavItem key={item.to} {...item} active={isActive(pathname, item.to)} />
           ))}
           <Separator className="my-3 bg-border" />
           {SECONDARY_NAV.map((item) => (
-            <NavItem key={item.to} {...item} active={pathname.startsWith(item.to)} />
+            <NavItem key={item.to} {...item} active={isActive(pathname, item.to)} />
           ))}
         </nav>
         <div className="border-t border-border p-3">
@@ -122,12 +126,13 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
               <LogOut className="h-4 w-4" />
             </button>
           </div>
+          <Credit className="px-2 pb-1 pt-2 text-[11px] leading-snug text-muted-foreground" />
         </div>
       </aside>
 
       {/* Mobile top bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3 lg:hidden">
-        <Link href="/arena" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <LogoMark className="h-6 w-6" />
           <Wordmark className="text-base tracking-[0.16em]" />
         </Link>
@@ -159,7 +164,7 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
         className="safe-bottom fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-surface-2 pt-1.5 lg:hidden"
       >
         {MOBILE_NAV.map(({ to, label, icon: Icon }) => {
-          const active = pathname.startsWith(to);
+          const active = isActive(pathname, to);
           return (
             <Link
               key={to}
