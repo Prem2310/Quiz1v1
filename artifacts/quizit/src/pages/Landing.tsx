@@ -1,9 +1,10 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { BarChart3, Flame, Swords, Target, Trophy } from "lucide-react";
+import { BarChart3, Flame, Github, Swords, Target, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { PublicShell } from "@/components/layout/PublicShell";
+import { AUTHOR_NAME, AUTHOR_URL, CONTRIBUTING_URL, ISSUES_URL, REPO_URL } from "@/content/project";
 import { TOPICS } from "@/content/topics";
 import { useAuth } from "@/stores/auth";
 import { usePublicStats } from "@/hooks/usePublicStats";
@@ -68,6 +69,10 @@ const FAQ = [
   {
     q: "Can I compete with my friends or my college?",
     a: "Yes. Add friends and challenge them to a duel directly, and compare yourself on the leaderboard globally or against your own college.",
+  },
+  {
+    q: "Who built quiz1v1, and is it open source?",
+    a: "quiz1v1 is built by Prem2310 and the code is open source under the MIT license. Bug reports, ideas and pull requests are welcome on GitHub. The question content is sourced from IndiaBix and is not covered by that license.",
   },
 ];
 
@@ -246,6 +251,41 @@ export default function Landing() {
             </div>
           </div>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
+        </section>
+
+        <section aria-labelledby="contribute-heading" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+          <div className="grid gap-6 border-2 border-border bg-surface p-6 sm:p-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-center">
+            <div>
+              <h2 id="contribute-heading" className="font-display text-2xl uppercase tracking-wide text-foreground sm:text-3xl">
+                Open to contribute
+              </h2>
+              <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+                quiz1v1 is built by{" "}
+                <a href={AUTHOR_URL} target="_blank" rel="noreferrer noopener" className="font-medium text-foreground underline-offset-4 hover:underline">
+                  {AUTHOR_NAME}
+                </a>{" "}
+                and its code is open source under the MIT license. Found a bug, want a new topic page, or have an idea for a duel mode? Issues and pull
+                requests are welcome.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 lg:justify-end">
+              <Button asChild>
+                <a href={REPO_URL} target="_blank" rel="noreferrer noopener">
+                  <Github /> View on GitHub
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={ISSUES_URL} target="_blank" rel="noreferrer noopener">
+                  Report an issue
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={CONTRIBUTING_URL} target="_blank" rel="noreferrer noopener">
+                  How to contribute
+                </a>
+              </Button>
+            </div>
+          </div>
         </section>
 
         <section className="px-4 pb-24 sm:px-6">

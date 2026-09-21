@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { Logo } from "@/components/brand/Logo";
+import { Credit } from "@/components/common/Credit";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/stores/auth";
 
@@ -59,6 +60,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
             <span>© {new Date().getFullYear()} quiz1v1</span>
           </nav>
         </div>
+        <Credit className="mx-auto mt-4 max-w-6xl border-t border-border pt-4 text-center text-xs text-muted-foreground sm:text-left" />
       </footer>
     </div>
   );

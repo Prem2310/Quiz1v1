@@ -17,6 +17,7 @@ import type { ReactNode } from "react";
 import { Logo, LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Credit } from "@/components/common/Credit";
 import { NotificationsMenu } from "@/components/social/NotificationsMenu";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { cn } from "@/lib/utils";
@@ -125,6 +126,7 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
               <LogOut className="h-4 w-4" />
             </button>
           </div>
+          <Credit className="px-2 pb-1 pt-2 text-[11px] leading-snug text-muted-foreground" />
         </div>
       </aside>
 
