@@ -15,6 +15,7 @@ tags:
   - name: analytics
   - name: duels
   - name: friends
+  - name: users
 paths:
   /healthz:
     get:
@@ -723,6 +724,24 @@ paths:
       responses:
         "204":
           description: Removed
+  /users/{username}:
+    get:
+      operationId: getPublicProfile
+      tags: [users]
+      summary: Another player's public profile card (rating, stats, and the viewer's relationship to them)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Username"
+      responses:
+        "200":
+          description: Public profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfile"
+        "404":
+          description: No user with that username
 components:
   securitySchemes:
     bearerAuth:
@@ -1189,6 +1208,34 @@ components:
           type: string
           enum: [none, friends, pending_outgoing, pending_incoming, self]
           default: none
+    PublicProfile:
+      type: object
+      required:
+        [
+          user_id, username, name, rating, best_rating, league, rank, current_streak, max_streak,
+          total_xp, matches_played, total_correct, total_incorrect, accuracy, joined_at,
+        ]
+      properties:
+        user_id: { type: integer }
+        username: { type: string }
+        name: { type: string }
+        college_name: { type: [string, "null"] }
+        rating: { type: number }
+        best_rating: { type: number }
+        league: { type: string }
+        rank: { type: integer }
+        current_streak: { type: integer }
+        max_streak: { type: integer }
+        total_xp: { type: integer }
+        matches_played: { type: integer }
+        total_correct: { type: integer }
+        total_incorrect: { type: integer }
+        accuracy: { type: number }
+        friend_status:
+          type: string
+          enum: [none, friends, pending_outgoing, pending_incoming, self]
+          default: none
+        joined_at: { type: string, format: date-time }
     FriendRequestRead:
       type: object
       required: [id, status, requester, addressee, created_at]

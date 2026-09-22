@@ -1,5 +1,6 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { BarChart3, Flame, Hash, RotateCcw, Swords, Target, Trophy, Zap } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, Flame, Hash, RotateCcw, Swords, Target, Trophy, Users, Zap } from "lucide-react";
 import { useGetMyAnalytics, useListFriends } from "@workspace/api-client-react";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { ErrorState, LoadingState } from "@/components/common/StateBlocks";
@@ -7,7 +8,7 @@ import { HoverCard, Reveal, StaggerGroup, StaggerItem } from "@/components/commo
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { initialsOf } from "@/components/layout/AppShell";
-import { usePublicStats } from "@/hooks/usePublicStats";
+import { MIN_ONLINE_SHOWN, MIN_PLAYERS_SHOWN, usePublicStats } from "@/hooks/usePublicStats";
 import { useAuth } from "@/stores/auth";
 
 export default function Arena() {
@@ -16,6 +17,8 @@ export default function Arena() {
   const friendsQuery = useListFriends();
   const friends = friendsQuery.data?.slice(0, 3) ?? [];
   const community = usePublicStats().data;
+  const showOnline = (community?.online_now ?? 0) >= MIN_ONLINE_SHOWN;
+  const showPlayers = (community?.registered_users ?? 0) >= MIN_PLAYERS_SHOWN;
 
   return (
     <div className="space-y-8">
@@ -25,22 +28,6 @@ export default function Arena() {
             Welcome back, {user?.name?.split(" ")[0] ?? "player"}
           </h1>
           <p className="mt-2 max-w-md text-sm text-muted-foreground">Pick your match — practice solo, or queue for a live duel.</p>
-          {/* Hidden until the count arrives (or if it fails); min-h keeps the header from jumping when it does. */}
-          <p className="numeric mt-3 flex min-h-5 flex-wrap items-center gap-x-5 gap-y-1">
-            {community ? (
-              <>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" aria-hidden="true" />
-                  <AnimatedNumber value={community.online_now} className="text-sm font-bold text-foreground" />
-                  <span className="label-micro">online now</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <AnimatedNumber value={community.registered_users} className="text-sm font-bold text-foreground" />
-                  <span className="label-micro">players</span>
-                </span>
-              </>
-            ) : null}
-          </p>
         </div>
         <div className="numeric grid w-full auto-cols-fr grid-flow-col divide-x divide-border overflow-hidden rounded-[var(--radius)] border border-border sm:flex sm:w-auto">
           <HudChip icon={Trophy} value={Math.round(user?.user_rating ?? 1000)} label={user?.league ?? "Bronze"} tone="text-primary" />
@@ -54,6 +41,11 @@ export default function Arena() {
           <HudChip icon={BarChart3} value={isPending ? null : (data?.accuracy ?? 0)} label="acc%" tone="text-secondary" />
         </div>
       </header>
+
+      {/* Hidden until a count clears its threshold (or the request fails); a tiny number reads as an empty server. */}
+      {showOnline || showPlayers ? (
+        <CommunityPulseCard online={showOnline ? community!.online_now : null} players={showPlayers ? community!.registered_users : null} />
+      ) : null}
 
       {!isPending && data && (data.due_for_review > 0 || data.recommended_topic) ? (
         <Reveal className="glass-panel flex flex-wrap items-center justify-between gap-4 p-5">
@@ -142,6 +134,67 @@ export default function Arena() {
       {isPending ? <LoadingState label="Loading your stats…" /> : null}
       {isError ? <ErrorState message="Couldn't load your stats." onRetry={() => void refetch()} /> : null}
     </div>
+  );
+}
+
+/** Tracks how much a polled value moved since its last change, for a few seconds — the numeric-delta idiom DESIGN.md
+ * asks for on every changed value, applied here to the one number on the page that moves on its own. */
+function usePolledDelta(value: number | null) {
+  const prev = useRef<number | null>(null);
+  const [delta, setDelta] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (value === null) return undefined;
+    if (prev.current !== null && prev.current !== value) {
+      setDelta(value - prev.current);
+      const timer = setTimeout(() => setDelta(null), 4000);
+      prev.current = value;
+      return () => clearTimeout(timer);
+    }
+    prev.current = value;
+    return undefined;
+  }, [value]);
+
+  return delta;
+}
+
+/** Server-pulse readout: live online count (the same searching-for-a-match radar ring used in Friends/VersusSlots)
+ * beside total registered players. Its own card, not a HUD chip — this is a fact about the community, not about the
+ * signed-in player, so it doesn't belong in that strip. */
+function CommunityPulseCard({ online, players }: { online: number | null; players: number | null }) {
+  const onlineDelta = usePolledDelta(online);
+  return (
+    <Reveal className="glass-panel flex flex-wrap items-center gap-x-8 gap-y-4 px-5 py-4">
+      {online !== null ? (
+        <div className="flex items-center gap-3">
+          <span className="pulse-ring inline-flex h-2.5 w-2.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <AnimatedNumber value={online} className="numeric text-2xl font-bold leading-none text-primary sm:text-3xl" />
+              {onlineDelta ? (
+                <span
+                  className={`numeric flex items-center gap-0.5 text-xs font-bold ${onlineDelta > 0 ? "text-primary" : "text-secondary"}`}
+                >
+                  {onlineDelta > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                  {Math.abs(onlineDelta)}
+                </span>
+              ) : null}
+            </div>
+            <p className="label-micro mt-1">Online now</p>
+          </div>
+        </div>
+      ) : null}
+      {online !== null && players !== null ? <div className="h-9 w-px shrink-0 bg-border" aria-hidden="true" /> : null}
+      {players !== null ? (
+        <div className="flex items-center gap-3">
+          <Users className="h-6 w-6 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <div>
+            <AnimatedNumber value={players} className="numeric text-2xl font-bold leading-none text-foreground sm:text-3xl" />
+            <p className="label-micro mt-1">Players</p>
+          </div>
+        </div>
+      ) : null}
+    </Reveal>
   );
 }
 

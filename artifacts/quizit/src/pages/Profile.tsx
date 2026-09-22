@@ -247,7 +247,7 @@ function DuelRow({ duel }: { duel: RatingPoint }) {
   );
 }
 
-function Stat({ icon: Icon, label, value, suffix = "", sub }: { icon: typeof Flame; label: string; value: number; suffix?: string; sub?: ReactNode }) {
+export function Stat({ icon: Icon, label, value, suffix = "", sub }: { icon: typeof Flame; label: string; value: number; suffix?: string; sub?: ReactNode }) {
   return (
     <div className="bg-card p-4 sm:p-5">
       <p className="label-micro flex items-center gap-1.5">

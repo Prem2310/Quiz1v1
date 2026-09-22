@@ -7,7 +7,7 @@ import { PublicShell } from "@/components/layout/PublicShell";
 import { AUTHOR_NAME, AUTHOR_URL, CONTRIBUTING_URL, ISSUES_URL, REPO_URL } from "@/content/project";
 import { TOPICS } from "@/content/topics";
 import { useAuth } from "@/stores/auth";
-import { usePublicStats } from "@/hooks/usePublicStats";
+import { MIN_ONLINE_SHOWN, MIN_PLAYERS_SHOWN, usePublicStats } from "@/hooks/usePublicStats";
 
 const MOVES = [
   {
@@ -31,10 +31,6 @@ const MOVES = [
     body: "Topic-by-topic accuracy, streaks and XP — see exactly where you stand before the real placement test.",
   },
 ];
-
-// A small number reads as an empty platform, so live player counts only show once they help.
-const MIN_PLAYERS_SHOWN = 50;
-const MIN_ONLINE_SHOWN = 3;
 
 type Stat = { value: number; label: string; suffix?: string; live?: boolean };
 

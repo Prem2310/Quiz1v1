@@ -508,6 +508,38 @@ export interface UserSummary {
   friend_status?: UserSummaryFriendStatus;
 }
 
+export type PublicProfileFriendStatus = typeof PublicProfileFriendStatus[keyof typeof PublicProfileFriendStatus];
+
+
+export const PublicProfileFriendStatus = {
+  none: 'none',
+  friends: 'friends',
+  pending_outgoing: 'pending_outgoing',
+  pending_incoming: 'pending_incoming',
+  self: 'self',
+} as const;
+
+export interface PublicProfile {
+  user_id: number;
+  username: string;
+  name: string;
+  /** @nullable */
+  college_name?: string | null;
+  rating: number;
+  best_rating: number;
+  league: string;
+  rank: number;
+  current_streak: number;
+  max_streak: number;
+  total_xp: number;
+  matches_played: number;
+  total_correct: number;
+  total_incorrect: number;
+  accuracy: number;
+  friend_status?: PublicProfileFriendStatus;
+  joined_at: string;
+}
+
 export type FriendRequestReadStatus = typeof FriendRequestReadStatus[keyof typeof FriendRequestReadStatus];
 
 

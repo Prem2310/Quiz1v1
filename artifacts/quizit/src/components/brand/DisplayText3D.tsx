@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "primary" | "destructive" | "muted";
+export type Tone = "primary" | "destructive" | "muted";
 
 /** Foreground word color and the offset "print-strike" layer behind it. */
-const TONE_COLORS: Record<Tone, { fg: string; strike: string }> = {
+export const TONE_COLORS: Record<Tone, { fg: string; strike: string }> = {
   primary: { fg: "var(--color-primary)", strike: "var(--color-secondary)" },
   destructive: { fg: "var(--color-secondary)", strike: "var(--color-primary)" },
   muted: { fg: "var(--color-muted-foreground)", strike: "var(--color-border)" },

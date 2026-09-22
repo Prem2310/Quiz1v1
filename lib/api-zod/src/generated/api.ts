@@ -991,3 +991,33 @@ export const RemoveFriendParams = zod.object({
 export const RemoveFriendResponse = zod.void()
 
 
+/**
+ * @summary Another player's public profile card (rating, stats, and the viewer's relationship to them)
+ */
+export const GetPublicProfileParams = zod.object({
+  "username": zod.coerce.string()
+})
+
+export const getPublicProfileResponseFriendStatusDefault = `none`;
+
+export const GetPublicProfileResponse = zod.object({
+  "user_id": zod.int(),
+  "username": zod.string(),
+  "name": zod.string(),
+  "college_name": zod.string().nullish(),
+  "rating": zod.number(),
+  "best_rating": zod.number(),
+  "league": zod.string(),
+  "rank": zod.int(),
+  "current_streak": zod.int(),
+  "max_streak": zod.int(),
+  "total_xp": zod.int(),
+  "matches_played": zod.int(),
+  "total_correct": zod.int(),
+  "total_incorrect": zod.int(),
+  "accuracy": zod.number(),
+  "friend_status": zod.enum(['none', 'friends', 'pending_outgoing', 'pending_incoming', 'self']).default(getPublicProfileResponseFriendStatusDefault),
+  "joined_at": zod.coerce.date()
+})
+
+
