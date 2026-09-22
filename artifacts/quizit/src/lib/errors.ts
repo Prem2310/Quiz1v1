@@ -12,3 +12,7 @@ export function getErrorMessage(error: unknown, fallback = "Something went wrong
 export function isNetworkError(error: unknown): boolean {
   return error instanceof TypeError && /fetch/i.test(error.message);
 }
+
+export function isNotFoundError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "status" in error && (error as { status?: number }).status === 404;
+}

@@ -38,6 +38,8 @@ export * from './listCollegesParams';
 export * from './listQuestionsDifficulty';
 export * from './listQuestionsParams';
 export * from './progressTrendPoint';
+export * from './publicProfile';
+export * from './publicProfileFriendStatus';
 export * from './publicStats';
 export * from './question';
 export * from './questionReview';

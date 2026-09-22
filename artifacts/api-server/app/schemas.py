@@ -367,6 +367,28 @@ class UserSummary(BaseModel):
     friend_status: Literal["none", "friends", "pending_outgoing", "pending_incoming", "self"] = "none"
 
 
+class PublicProfile(BaseModel):
+    """Another player's public card: identity, rating, and stats, plus how the viewer relates to them."""
+
+    user_id: int
+    username: str
+    name: str
+    college_name: str | None = None
+    rating: float
+    best_rating: float
+    league: str
+    rank: int
+    current_streak: int
+    max_streak: int
+    total_xp: int
+    matches_played: int
+    total_correct: int
+    total_incorrect: int
+    accuracy: float
+    friend_status: Literal["none", "friends", "pending_outgoing", "pending_incoming", "self"] = "none"
+    joined_at: datetime
+
+
 class FriendRequestRead(BaseModel):
     id: int
     status: Literal["pending", "accepted", "declined"]

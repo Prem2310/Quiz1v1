@@ -22,6 +22,7 @@ import DuelRoom from '@/pages/DuelRoom';
 import Leaderboard from '@/pages/Leaderboard';
 import Friends from '@/pages/Friends';
 import Profile from '@/pages/Profile';
+import UserProfile from '@/pages/UserProfile';
 import ProgressPage from '@/pages/Progress';
 import Settings from '@/pages/Settings';
 import { API_BASE_URL } from '@/lib/config';
@@ -111,6 +112,13 @@ function Router() {
           <Protected>
             <Profile />
           </Protected>
+        </Route>
+        <Route path="/profile/:username">
+          {(params) => (
+            <Protected>
+              <UserProfile username={params.username} />
+            </Protected>
+          )}
         </Route>
         <Route path="/progress">
           <Protected>
