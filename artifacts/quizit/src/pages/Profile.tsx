@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { BarChart3, ChevronRight, Flame, LogOut, Settings, Swords, Target, Trophy, Users } from "lucide-react";
+import { BarChart3, ChevronRight, Flame, Info, LogOut, Settings, Swords, Target, Trophy, Users } from "lucide-react";
 import { useGetMyHistory, useGetMyRatingHistory, useGetMyTopicInsights } from "@workspace/api-client-react";
 import { Credit } from "@/components/common/Credit";
+import { SocialLinks } from "@/components/common/SocialLinks";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateBlocks";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/common/Motion";
 import { ActivityHeatmap } from "@/components/profile/ActivityHeatmap";
@@ -16,6 +17,7 @@ const MORE_LINKS = [
   { to: "/progress", label: "Progress", icon: BarChart3 },
   { to: "/friends", label: "Friends", icon: Users },
   { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/about", label: "About quiz1v1", icon: Info },
 ] as const;
 
 const ACTIVITY_TABS = [
@@ -180,7 +182,10 @@ export default function Profile() {
         </Reveal>
       </div>
 
-      <Credit className="pb-2 text-center text-xs text-muted-foreground lg:hidden" />
+      <div className="flex flex-col items-center gap-3 pb-2 lg:hidden">
+        <SocialLinks />
+        <Credit className="text-center text-xs text-muted-foreground" />
+      </div>
     </div>
   );
 }

@@ -28,6 +28,7 @@ import Settings from '@/pages/Settings';
 import { API_BASE_URL } from '@/lib/config';
 import { AuthProvider, useAuth } from '@/stores/auth';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 setBaseUrl(API_BASE_URL);
 setAuthTokenGetter(() => {
@@ -69,11 +70,19 @@ function Home() {
   return <Landing />;
 }
 
+/** The landing page at its own address, so signed-in players (whose "/" is the Arena) can still reach it. */
+function About() {
+  // Same content as "/", so point search engines there instead of indexing a duplicate.
+  usePageMeta("Quiz1v1 – Free Aptitude Practice & 1v1 Quiz Duels", { canonicalPath: "/" });
+  return <Landing />;
+}
+
 function Router() {
   return (
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/about" component={About} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/auth/callback" component={AuthCallback} />

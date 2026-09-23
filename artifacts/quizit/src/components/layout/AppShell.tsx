@@ -18,6 +18,7 @@ import { Logo, LogoMark, Wordmark } from "@/components/brand/Logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Credit } from "@/components/common/Credit";
+import { SocialLinks } from "@/components/common/SocialLinks";
 import { NotificationsMenu } from "@/components/social/NotificationsMenu";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { cn } from "@/lib/utils";
@@ -127,6 +128,12 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
             </button>
           </div>
           <Credit className="px-2 pb-1 pt-2 text-[11px] leading-snug text-muted-foreground" />
+          <div className="flex items-center justify-between gap-2 px-2 pt-2">
+            <Link href="/about" className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground">
+              About quiz1v1
+            </Link>
+            <SocialLinks size="sm" />
+          </div>
         </div>
       </aside>
 
