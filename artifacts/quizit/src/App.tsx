@@ -73,7 +73,7 @@ function Home() {
 /** The landing page at its own address, so signed-in players (whose "/" is the Arena) can still reach it. */
 function About() {
   // Same content as "/", so point search engines there instead of indexing a duplicate.
-  usePageMeta("Quiz1v1 – Free Aptitude Practice & 1v1 Quiz Duels", { canonicalPath: "/" });
+  usePageMeta("quiz1v1 – Free Aptitude Practice & 1v1 Quiz Duels", { canonicalPath: "/" });
   return <Landing />;
 }
 
