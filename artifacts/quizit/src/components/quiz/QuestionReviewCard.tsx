@@ -24,28 +24,27 @@ export function QuestionReviewCard({ review, index }: { review: QuestionReview; 
 
   return (
     <div className="surface-panel overflow-hidden">
-      <div className="flex items-start justify-between gap-3 border-b border-border p-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          {question.directionsHtml ? (
-            <SafeHtml html={question.directionsHtml} className="rounded-[var(--radius)] border border-border bg-surface/60 p-3 text-sm leading-relaxed text-muted-foreground [&_img]:max-w-full [&_table]:w-full" />
-          ) : null}
-          <div className="flex min-w-0 gap-3">
-            <span className="numeric shrink-0 text-xs font-bold text-muted-foreground">Q{index + 1}</span>
-            {question.textHtml ? (
-              <SafeHtml html={question.textHtml} className="text-sm font-medium text-foreground [&_img]:max-w-full" />
-            ) : (
-              <p className="text-sm font-medium text-foreground">{question.text}</p>
+      {/* Number and verdict share one header row, so the directions and question get the card's full width. */}
+      <div className="space-y-3 border-b border-border p-4">
+        <div className="flex items-center justify-between gap-3">
+          <span className="numeric text-xs font-bold text-muted-foreground">Q{index + 1}</span>
+          <span
+            className={cn(
+              "shrink-0 rounded-[calc(var(--radius)-4px)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
+              skipped ? "bg-muted text-muted-foreground" : review.is_correct ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive",
             )}
-          </div>
+          >
+            {skipped ? "Skipped" : review.is_correct ? "Correct" : "Incorrect"}
+          </span>
         </div>
-        <span
-          className={cn(
-            "shrink-0 rounded-[calc(var(--radius)-4px)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide",
-            skipped ? "bg-muted text-muted-foreground" : review.is_correct ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive",
-          )}
-        >
-          {skipped ? "Skipped" : review.is_correct ? "Correct" : "Incorrect"}
-        </span>
+        {question.directionsHtml ? (
+          <SafeHtml html={question.directionsHtml} className="rounded-[var(--radius)] border border-border bg-surface/60 p-3 text-sm leading-relaxed text-muted-foreground [&_img]:max-w-full [&_table]:w-full" />
+        ) : null}
+        {question.textHtml ? (
+          <SafeHtml html={question.textHtml} className="text-sm font-medium text-foreground [&_img]:max-w-full" />
+        ) : (
+          <p className="text-sm font-medium text-foreground">{question.text}</p>
+        )}
       </div>
 
       <div className="space-y-2 p-4">

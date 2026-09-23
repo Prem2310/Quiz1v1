@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ActivityDay,
+  ActivityDayDetail,
   AnalyticsSummary,
   AttemptSummary,
   AuthProviders,
@@ -31,6 +33,8 @@ import type {
   DuelSummary,
   FriendRequestRead,
   GetLeaderboardParams,
+  GetMyActivityDayParams,
+  GetMyActivityParams,
   GetMyHistoryParams,
   GetMyProgressTrendParams,
   GetMyRatingHistoryParams,
@@ -1614,6 +1618,174 @@ export function useGetMyRatingHistory<TData = Awaited<ReturnType<typeof getMyRat
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMyRatingHistoryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyActivityUrl = (params: GetMyActivityParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/analytics/me/activity?${stringifiedParams}` : `/api/analytics/me/activity`
+}
+
+/**
+ * @summary Per-day activity for the profile heatmap between two calendar days, inclusive (only active days, oldest first)
+ */
+export const getMyActivity = async (params: GetMyActivityParams, options?: Parameters<typeof customFetch>[1]): Promise<ActivityDay[]> => {
+
+  return customFetch<ActivityDay[]>(getGetMyActivityUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyActivityQueryKey = (params?: GetMyActivityParams,) => {
+    return [
+    `/api/analytics/me/activity`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMyActivityQueryOptions = <TData = Awaited<ReturnType<typeof getMyActivity>>, TError = ErrorType<unknown>>(params: GetMyActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyActivityQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyActivity>>> = ({ signal }) => getMyActivity(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyActivityQueryResult = NonNullable<Awaited<ReturnType<typeof getMyActivity>>>
+export type GetMyActivityQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Per-day activity for the profile heatmap between two calendar days, inclusive (only active days, oldest first)
+ */
+
+export function useGetMyActivity<TData = Awaited<ReturnType<typeof getMyActivity>>, TError = ErrorType<unknown>>(
+ params: GetMyActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyActivityQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMyActivityDayUrl = (params: GetMyActivityDayParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/analytics/me/activity/day?${stringifiedParams}` : `/api/analytics/me/activity/day`
+}
+
+/**
+ * @summary Rated duels and practice sessions finished on one calendar day
+ */
+export const getMyActivityDay = async (params: GetMyActivityDayParams, options?: Parameters<typeof customFetch>[1]): Promise<ActivityDayDetail> => {
+
+  return customFetch<ActivityDayDetail>(getGetMyActivityDayUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyActivityDayQueryKey = (params?: GetMyActivityDayParams,) => {
+    return [
+    `/api/analytics/me/activity/day`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMyActivityDayQueryOptions = <TData = Awaited<ReturnType<typeof getMyActivityDay>>, TError = ErrorType<unknown>>(params: GetMyActivityDayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivityDay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyActivityDayQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyActivityDay>>> = ({ signal }) => getMyActivityDay(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyActivityDay>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyActivityDayQueryResult = NonNullable<Awaited<ReturnType<typeof getMyActivityDay>>>
+export type GetMyActivityDayQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Rated duels and practice sessions finished on one calendar day
+ */
+
+export function useGetMyActivityDay<TData = Awaited<ReturnType<typeof getMyActivityDay>>, TError = ErrorType<unknown>>(
+ params: GetMyActivityDayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivityDay>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyActivityDayQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

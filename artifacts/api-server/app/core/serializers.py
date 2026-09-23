@@ -26,4 +26,5 @@ def to_user_read(user: UserData) -> UserRead:
         total_xp=user.total_xp,
         best_rating=user.best_rating,
         league=league_for_rating(user.user_rating),
+        date_joined=user.date_joined,
     )

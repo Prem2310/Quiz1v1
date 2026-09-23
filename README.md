@@ -8,6 +8,8 @@
 
 Free to use. No credit card. Sign up with email, Google or GitHub and start in under a minute.
 
+Follow quiz1v1 on [Instagram](https://www.instagram.com/quiz1v1) and [LinkedIn](https://www.linkedin.com/company/quiz1v1).
+
 <img src="docs/screenshots/landing.png" alt="quiz1v1 landing page" width="860">
 
 </div>
@@ -104,10 +106,27 @@ directly. Notifications tell you when a challenge or request arrives.
 
 ### 7. Your profile
 
-Your profile keeps your rating and best rating, league, current and best streak, duels played, overall accuracy, XP,
-accuracy by topic and your recent activity.
+Your profile shows your rating, rank and best rating, how far you are from the next league, your streak, duels played
+(with your win-loss record), overall accuracy and XP. Below that are a **rating graph** of every duel you have played
+(hover a point for that duel), **accuracy by topic** with your weakest topics first, and your recent duels and practice
+sessions.
 
-<img src="docs/screenshots/profile.png" alt="Profile page with stats and topic accuracy" width="860">
+<img src="docs/screenshots/profile.png" alt="Profile page with rating, league progress, stats and rating graph" width="860">
+
+The **daily activity** calendar shows a year of play at a glance, one square per day, shaded by how many questions you
+answered. The current year covers the last 12 months up to today; earlier years show January to December. Pick a day
+(or move with the arrow keys) to see that day's duels and practice sessions, each linking to its full review.
+
+<img src="docs/screenshots/profile-activity.png" alt="Daily activity calendar with one day's duels and practice sessions" width="860">
+
+### 8. Other players' profiles
+
+Open anyone's profile and it is set up like a fight: you on one side, them on the other. You see their rating, rank
+and league, your **head-to-head record** with the recent duels between you (each one opens its review), and a
+**tale of the tape** that puts your stats and theirs side by side. Challenge them or add them as a friend from the
+same screen.
+
+<img src="docs/screenshots/friend-profile.png" alt="Another player's profile with a versus header, head-to-head and tale of the tape" width="860">
 
 ### Works on your phone
 
@@ -115,7 +134,9 @@ The whole app is responsive. On a phone the sidebar becomes a bottom navigation 
 fits in a spare few minutes.
 
 <div align="center">
-<img src="docs/screenshots/mobile-arena.png" alt="Arena on a phone" width="300">
+<img src="docs/screenshots/mobile-arena.png" alt="Arena on a phone" width="250">
+<img src="docs/screenshots/mobile-profile.png" alt="Your profile on a phone" width="250">
+<img src="docs/screenshots/mobile-friend-profile.png" alt="Another player's profile on a phone" width="250">
 </div>
 
 ## Topics

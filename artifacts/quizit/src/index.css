@@ -658,6 +658,20 @@
     filter: invert(1);
   }
 
+  /* Math symbol GIFs (brackets, parentheses, ⇒, ∴) are named `…-sym-…` (under each topic or a shared `common/`
+   * folder) and drawn black ink on a white box. Invert to light ink on black, dim to the muted text tone, then
+   * `screen` drops the black box so only the glyph shows on any dark surface. Figures and charts keep their plate. */
+  .indiabix-html img[src*="-sym-"],
+  .indiabix-html img[src*="/common/"] {
+    /* Inline wherever they appear: Tailwind's reset makes images block, which put a lone ⇒ on its own line in <p>. */
+    display: inline-block;
+    vertical-align: middle;
+    max-height: 1.4em;
+    width: auto;
+    filter: invert(1) brightness(0.68);
+    mix-blend-mode: screen;
+  }
+
   .indiabix-html p {
     margin: 0 0 0.5em;
   }

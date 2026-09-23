@@ -60,7 +60,8 @@ export const RegisterResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 })
 
@@ -93,7 +94,8 @@ export const LoginResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 })
 
@@ -132,7 +134,8 @@ export const GetCurrentUserResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 
 
@@ -175,7 +178,8 @@ export const UpdateCurrentUserResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 
 
@@ -498,6 +502,71 @@ export const GetMyRatingHistoryResponseItem = zod.object({
   "opponent_score": zod.int()
 })
 export const GetMyRatingHistoryResponse = zod.array(GetMyRatingHistoryResponseItem)
+
+
+/**
+ * @summary Per-day activity for the profile heatmap between two calendar days, inclusive (only active days, oldest first)
+ */
+export const getMyActivityQueryTzOffsetDefault = 0;
+export const getMyActivityQueryTzOffsetMin = -720;
+export const getMyActivityQueryTzOffsetMax = 840;
+
+
+
+export const GetMyActivityQueryParams = zod.object({
+  "start": zod.date(),
+  "end": zod.date().describe('At most 370 days after start'),
+  "tz_offset": zod.coerce.number().int().min(getMyActivityQueryTzOffsetMin).max(getMyActivityQueryTzOffsetMax).default(getMyActivityQueryTzOffsetDefault).describe('Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player\'s own calendar')
+})
+
+export const GetMyActivityResponseItem = zod.object({
+  "date": zod.coerce.date(),
+  "practice": zod.int(),
+  "duels": zod.int(),
+  "questions": zod.int(),
+  "correct": zod.int(),
+  "points": zod.int()
+})
+export const GetMyActivityResponse = zod.array(GetMyActivityResponseItem)
+
+
+/**
+ * @summary Rated duels and practice sessions finished on one calendar day
+ */
+export const getMyActivityDayQueryTzOffsetDefault = 0;
+export const getMyActivityDayQueryTzOffsetMin = -720;
+export const getMyActivityDayQueryTzOffsetMax = 840;
+
+
+
+export const GetMyActivityDayQueryParams = zod.object({
+  "date": zod.date(),
+  "tz_offset": zod.coerce.number().int().min(getMyActivityDayQueryTzOffsetMin).max(getMyActivityDayQueryTzOffsetMax).default(getMyActivityDayQueryTzOffsetDefault).describe('Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player\'s own calendar')
+})
+
+export const GetMyActivityDayResponse = zod.object({
+  "date": zod.coerce.date(),
+  "practice": zod.array(zod.object({
+  "attempt_id": zod.int(),
+  "quiz_id": zod.int(),
+  "quiz_mode": zod.string(),
+  "score": zod.int(),
+  "total_correct": zod.int(),
+  "total_incorrect": zod.int(),
+  "accuracy": zod.number(),
+  "completed_at": zod.coerce.date().nullable()
+})),
+  "duels": zod.array(zod.object({
+  "duel_id": zod.int(),
+  "completed_at": zod.coerce.date().nullable(),
+  "rating_before": zod.number(),
+  "rating_after": zod.number(),
+  "result": zod.enum(['win', 'loss', 'draw']),
+  "opponent_name": zod.string(),
+  "my_score": zod.int(),
+  "opponent_score": zod.int()
+}))
+})
 
 
 /**

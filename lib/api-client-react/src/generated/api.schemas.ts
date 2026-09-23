@@ -54,6 +54,7 @@ export interface User {
   total_xp: number;
   best_rating: number;
   league: string;
+  date_joined: string;
 }
 
 export interface UserCreate {
@@ -342,6 +343,15 @@ export interface ProgressTrendPoint {
   accuracy: number;
 }
 
+export interface ActivityDay {
+  date: string;
+  practice: number;
+  duels: number;
+  questions: number;
+  correct: number;
+  points: number;
+}
+
 export type RatingPointResult = typeof RatingPointResult[keyof typeof RatingPointResult];
 
 
@@ -361,6 +371,12 @@ export interface RatingPoint {
   opponent_name: string;
   my_score: number;
   opponent_score: number;
+}
+
+export interface ActivityDayDetail {
+  date: string;
+  practice: AttemptSummary[];
+  duels: RatingPoint[];
 }
 
 export interface LeaderboardEntry {
@@ -557,6 +573,11 @@ export interface FriendRequestRead {
   created_at: string;
 }
 
+/**
+ * Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player's own calendar
+ */
+export type TzOffsetParameter = number;
+
 export type ListCollegesParams = {
 /**
  * @maxLength 100
@@ -620,6 +641,30 @@ export type GetMyRatingHistoryParams = {
  * @maximum 500
  */
 limit?: number;
+};
+
+export type GetMyActivityParams = {
+start: string;
+/**
+ * At most 370 days after start
+ */
+end: string;
+/**
+ * Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player's own calendar
+ * @minimum -720
+ * @maximum 840
+ */
+tz_offset?: TzOffsetParameter;
+};
+
+export type GetMyActivityDayParams = {
+date: string;
+/**
+ * Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player's own calendar
+ * @minimum -720
+ * @maximum 840
+ */
+tz_offset?: TzOffsetParameter;
 };
 
 export type GetMyProgressTrendParams = {

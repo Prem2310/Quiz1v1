@@ -66,6 +66,7 @@ class UserRead(BaseModel):
     total_xp: int
     best_rating: float
     league: str
+    date_joined: datetime
 
 
 class AuthResponse(BaseModel):
@@ -252,6 +253,23 @@ class RatingPoint(BaseModel):
     opponent_name: str
     my_score: int
     opponent_score: int
+
+
+class ActivityDay(BaseModel):
+    """One calendar day on the profile activity heatmap."""
+
+    date: str
+    practice: int
+    duels: int
+    questions: int
+    correct: int
+    points: int
+
+
+class ActivityDayDetail(BaseModel):
+    date: str
+    practice: list[AttemptSummary]
+    duels: list[RatingPoint]
 
 
 class LeaderboardEntry(BaseModel):
