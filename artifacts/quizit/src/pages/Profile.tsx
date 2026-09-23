@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { formatDistanceToNowStrict } from "date-fns";
-import { BarChart3, ChevronRight, Flame, LogOut, Settings, Swords, Target, TrendingDown, TrendingUp, Trophy, Users, Zap } from "lucide-react";
-import { useGetMyHistory, useGetMyRatingHistory, useGetMyTopicInsights, type RatingPoint } from "@workspace/api-client-react";
-import { AnimatedNumber } from "@/components/common/AnimatedNumber";
+import { BarChart3, ChevronRight, Flame, LogOut, Settings, Swords, Target, Trophy, Users } from "lucide-react";
+import { useGetMyHistory, useGetMyRatingHistory, useGetMyTopicInsights } from "@workspace/api-client-react";
 import { Credit } from "@/components/common/Credit";
 import { EmptyState, ErrorState, LoadingState } from "@/components/common/StateBlocks";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/common/Motion";
-import { HudStat, LeagueMeter, Portrait, SectionTitle, Segmented, Stat } from "@/components/profile/ProfileParts";
+import { ActivityHeatmap } from "@/components/profile/ActivityHeatmap";
+import { DuelRow, HudStat, LeagueMeter, Portrait, PracticeRow, SectionTitle, Segmented, Stat } from "@/components/profile/ProfileParts";
 import { RatingGraph } from "@/components/profile/RatingGraph";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/stores/auth";
@@ -23,14 +22,6 @@ const ACTIVITY_TABS = [
   { key: "duels", label: "Duels" },
   { key: "practice", label: "Practice" },
 ] as const;
-
-const RESULT_STYLE = {
-  win: { letter: "W", cls: "border-primary text-primary" },
-  loss: { letter: "L", cls: "border-secondary text-secondary" },
-  draw: { letter: "D", cls: "border-border text-muted-foreground" },
-} as const;
-
-const ago = (iso: string | null) => (iso ? formatDistanceToNowStrict(new Date(iso), { addSuffix: true }) : "");
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -83,6 +74,10 @@ export default function Profile() {
         <Stat icon={Target} label="Accuracy" value={accuracy} suffix="%" sub={`${user.total_correct} of ${totalAnswered} correct`} />
         <Stat icon={Trophy} label="Total XP" value={user.total_xp} sub={`${user.total_points.toLocaleString()} points`} />
       </StaggerGroup>
+
+      <Reveal delay={0.05} className="surface-panel p-4 sm:p-5">
+        <ActivityHeatmap />
+      </Reveal>
 
       <Reveal delay={0.05} className="surface-panel p-4 sm:p-5">
         <SectionTitle>Rating history</SectionTitle>
@@ -178,18 +173,7 @@ export default function Profile() {
           ) : (
             <ul className="surface-panel divide-y divide-border">
               {historyQuery.data.map((attempt) => (
-                <li key={attempt.attempt_id} className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold capitalize text-foreground">{attempt.quiz_mode.replace("_", " ")}</p>
-                    <p className="numeric mt-0.5 text-xs text-muted-foreground">
-                      {attempt.total_correct}/{attempt.total_correct + attempt.total_incorrect} correct · {ago(attempt.completed_at ?? null)}
-                    </p>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-primary">
-                    <Zap className="h-3.5 w-3.5" />
-                    <AnimatedNumber value={attempt.score} className="numeric" />
-                  </span>
-                </li>
+                <PracticeRow key={attempt.attempt_id} attempt={attempt} />
               ))}
             </ul>
           )}
@@ -201,28 +185,3 @@ export default function Profile() {
   );
 }
 
-function DuelRow({ duel }: { duel: RatingPoint }) {
-  const style = RESULT_STYLE[duel.result];
-  const delta = Math.round((duel.rating_after - duel.rating_before) * 10) / 10;
-  return (
-    <li>
-      <Link href={`/duel/${duel.duel_id}`} className="group flex min-h-14 items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface">
-        <span className={cn("numeric flex h-8 w-8 shrink-0 items-center justify-center rounded-[calc(var(--radius)-4px)] border-2 text-xs font-bold", style.cls)}>{style.letter}</span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">
-            <span className="font-medium text-muted-foreground">vs</span> {duel.opponent_name}
-          </p>
-          <p className="numeric mt-0.5 text-xs text-muted-foreground">
-            {duel.my_score}–{duel.opponent_score} · {ago(duel.completed_at)}
-          </p>
-        </div>
-        <span className={cn("numeric flex shrink-0 items-center gap-1 text-sm font-bold", delta >= 0 ? "text-primary" : "text-secondary")}>
-          {delta >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-          {delta >= 0 ? "+" : "−"}
-          {Math.abs(delta)}
-        </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-      </Link>
-    </li>
-  );
-}

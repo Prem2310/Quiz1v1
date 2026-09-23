@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
-import type { Flame } from "lucide-react";
+import { Link } from "wouter";
+import { format, formatDistanceToNowStrict } from "date-fns";
+import { ChevronRight, TrendingDown, TrendingUp, Zap, type Flame } from "lucide-react";
+import type { AttemptSummary, RatingPoint } from "@workspace/api-client-react";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { initialsOf } from "@/components/layout/AppShell";
 import { leagueProgress } from "@/lib/leagues";
@@ -72,9 +75,9 @@ export function LeagueMeter({ rating, corner }: { rating: number; corner: Corner
 }
 
 /** One readout in a divided HUD strip. */
-export function HudStat({ label, children, tone = "text-foreground" }: { label: string; children: ReactNode; tone?: string }) {
+export function HudStat({ label, children, tone = "text-foreground", className }: { label: string; children: ReactNode; tone?: string; className?: string }) {
   return (
-    <div className="min-w-0 bg-surface-2/70 px-3 py-2.5 sm:px-4">
+    <div className={cn("min-w-0 bg-surface-2/70 px-3 py-2.5 sm:px-4", className)}>
       <p className={cn("numeric truncate text-lg font-bold leading-none sm:text-xl", tone)}>{children}</p>
       <p className="label-micro mt-1.5 truncate">{label}</p>
     </div>
@@ -121,5 +124,60 @@ export function Stat({ icon: Icon, label, value, suffix = "", sub }: { icon: typ
       <AnimatedNumber value={value} suffix={suffix} className="numeric mt-2 block text-2xl font-bold leading-none text-foreground" />
       <p className="mt-1.5 min-h-4 truncate text-xs text-muted-foreground">{sub}</p>
     </div>
+  );
+}
+
+const RESULT_STYLE = {
+  win: { letter: "W", cls: "border-primary text-primary" },
+  loss: { letter: "L", cls: "border-secondary text-secondary" },
+  draw: { letter: "D", cls: "border-border text-muted-foreground" },
+} as const;
+
+/** "2 days ago" in a recent list; "4:32 PM" when the list is already one day. */
+function when(iso: string | null | undefined, clock: boolean) {
+  if (!iso) return "";
+  return clock ? format(new Date(iso), "h:mm a") : formatDistanceToNowStrict(new Date(iso), { addSuffix: true });
+}
+
+export function DuelRow({ duel, clock = false }: { duel: RatingPoint; clock?: boolean }) {
+  const style = RESULT_STYLE[duel.result];
+  const delta = Math.round((duel.rating_after - duel.rating_before) * 10) / 10;
+  return (
+    <li>
+      <Link href={`/duel/${duel.duel_id}`} className="group flex min-h-14 items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface">
+        <span className={cn("numeric flex h-8 w-8 shrink-0 items-center justify-center rounded-[calc(var(--radius)-4px)] border-2 text-xs font-bold", style.cls)}>{style.letter}</span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-foreground">
+            <span className="font-medium text-muted-foreground">vs</span> {duel.opponent_name}
+          </p>
+          <p className="numeric mt-0.5 text-xs text-muted-foreground">
+            {duel.my_score}–{duel.opponent_score} · {when(duel.completed_at, clock)}
+          </p>
+        </div>
+        <span className={cn("numeric flex shrink-0 items-center gap-1 text-sm font-bold", delta >= 0 ? "text-primary" : "text-secondary")}>
+          {delta >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+          {delta >= 0 ? "+" : "−"}
+          {Math.abs(delta)}
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      </Link>
+    </li>
+  );
+}
+
+export function PracticeRow({ attempt, clock = false }: { attempt: AttemptSummary; clock?: boolean }) {
+  return (
+    <li className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold capitalize text-foreground">{attempt.quiz_mode.replace("_", " ")}</p>
+        <p className="numeric mt-0.5 text-xs text-muted-foreground">
+          {attempt.total_correct}/{attempt.total_correct + attempt.total_incorrect} correct · {when(attempt.completed_at, clock)}
+        </p>
+      </div>
+      <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-primary">
+        <Zap className="h-3.5 w-3.5" />
+        <AnimatedNumber value={attempt.score} className="numeric" />
+      </span>
+    </li>
   );
 }

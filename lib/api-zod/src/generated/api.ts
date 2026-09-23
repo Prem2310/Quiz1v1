@@ -501,6 +501,73 @@ export const GetMyRatingHistoryResponse = zod.array(GetMyRatingHistoryResponseIt
 
 
 /**
+ * @summary Per-day activity for the profile heatmap (only active days, oldest first)
+ */
+export const getMyActivityQueryDaysDefault = 371;
+export const getMyActivityQueryDaysMax = 371;
+
+export const getMyActivityQueryTzOffsetDefault = 0;
+export const getMyActivityQueryTzOffsetMin = -720;
+export const getMyActivityQueryTzOffsetMax = 840;
+
+
+
+export const GetMyActivityQueryParams = zod.object({
+  "days": zod.coerce.number().int().min(1).max(getMyActivityQueryDaysMax).default(getMyActivityQueryDaysDefault),
+  "tz_offset": zod.coerce.number().int().min(getMyActivityQueryTzOffsetMin).max(getMyActivityQueryTzOffsetMax).default(getMyActivityQueryTzOffsetDefault).describe('Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player\'s own calendar')
+})
+
+export const GetMyActivityResponseItem = zod.object({
+  "date": zod.coerce.date(),
+  "practice": zod.int(),
+  "duels": zod.int(),
+  "questions": zod.int(),
+  "correct": zod.int(),
+  "points": zod.int()
+})
+export const GetMyActivityResponse = zod.array(GetMyActivityResponseItem)
+
+
+/**
+ * @summary Rated duels and practice sessions finished on one calendar day
+ */
+export const getMyActivityDayQueryTzOffsetDefault = 0;
+export const getMyActivityDayQueryTzOffsetMin = -720;
+export const getMyActivityDayQueryTzOffsetMax = 840;
+
+
+
+export const GetMyActivityDayQueryParams = zod.object({
+  "date": zod.date(),
+  "tz_offset": zod.coerce.number().int().min(getMyActivityDayQueryTzOffsetMin).max(getMyActivityDayQueryTzOffsetMax).default(getMyActivityDayQueryTzOffsetDefault).describe('Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player\'s own calendar')
+})
+
+export const GetMyActivityDayResponse = zod.object({
+  "date": zod.coerce.date(),
+  "practice": zod.array(zod.object({
+  "attempt_id": zod.int(),
+  "quiz_id": zod.int(),
+  "quiz_mode": zod.string(),
+  "score": zod.int(),
+  "total_correct": zod.int(),
+  "total_incorrect": zod.int(),
+  "accuracy": zod.number(),
+  "completed_at": zod.coerce.date().nullable()
+})),
+  "duels": zod.array(zod.object({
+  "duel_id": zod.int(),
+  "completed_at": zod.coerce.date().nullable(),
+  "rating_before": zod.number(),
+  "rating_after": zod.number(),
+  "result": zod.enum(['win', 'loss', 'draw']),
+  "opponent_name": zod.string(),
+  "my_score": zod.int(),
+  "opponent_score": zod.int()
+}))
+})
+
+
+/**
  * @summary Get a daily accuracy trend for the progress chart
  */
 export const getMyProgressTrendQueryDaysDefault = 30;

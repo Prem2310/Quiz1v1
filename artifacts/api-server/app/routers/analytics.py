@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 from fastapi import APIRouter, Query
 from sqlalchemy import Integer, desc, func, or_, select
@@ -8,7 +8,7 @@ from app.core.adaptive import get_catalog, load_profiles
 from app.core.scoring import league_for_rating
 from app.dependencies import CurrentUser, DbSession
 from app.models import DuelMatch, FriendRequest, Question, QuizHistory, Subtopic, Topic, UserData, UserQuestionStats, UserQuizHistory, UserQuizResponse
-from app.schemas import AnalyticsSummary, AttemptSummary, LeaderboardEntry, LeaderboardScope, ProgressTrendPoint, RatingPoint, SubtopicWeakness, TopicInsight
+from app.schemas import ActivityDay, ActivityDayDetail, AnalyticsSummary, AttemptSummary, LeaderboardEntry, LeaderboardScope, ProgressTrendPoint, RatingPoint, SubtopicWeakness, TopicInsight
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -152,28 +152,7 @@ async def my_history(
             query = query.where(QuizHistory.quiz_mode == mode)
     query = query.order_by(desc(UserQuizHistory.started_at)).limit(limit)
     attempts = list((await db.scalars(query)).all())
-
-    quiz_ids = {attempt.quiz_history_id for attempt in attempts}
-    quizzes = {
-        quiz.id: quiz
-        for quiz in (await db.scalars(select(QuizHistory).where(QuizHistory.id.in_(quiz_ids)))).all()
-    } if quiz_ids else {}
-    return [
-        AttemptSummary(
-            attempt_id=attempt.id,
-            quiz_id=attempt.quiz_history_id,
-            quiz_mode=quizzes[attempt.quiz_history_id].quiz_mode,
-            score=attempt.points_scored,
-            total_correct=attempt.correct_count,
-            total_incorrect=attempt.incorrect_count,
-            accuracy=round(attempt.correct_count / (attempt.correct_count + attempt.incorrect_count) * 100, 2)
-            if attempt.correct_count + attempt.incorrect_count
-            else 0,
-            completed_at=attempt.completed_at,
-        )
-        for attempt in attempts
-        if attempt.quiz_history_id in quizzes
-    ]
+    return await _attempt_summaries(db, attempts)
 
 
 @router.get("/me/topics", response_model=list[TopicInsight])
@@ -222,6 +201,35 @@ async def my_rating_history(current_user: CurrentUser, db: DbSession, limit: int
             )
         ).all()
     )
+    return await _rating_points(db, me, list(reversed(matches)))
+
+
+async def _attempt_summaries(db: DbSession, attempts: list[UserQuizHistory]) -> list[AttemptSummary]:
+    quiz_ids = {attempt.quiz_history_id for attempt in attempts}
+    quizzes = {
+        quiz.id: quiz
+        for quiz in (await db.scalars(select(QuizHistory).where(QuizHistory.id.in_(quiz_ids)))).all()
+    } if quiz_ids else {}
+    return [
+        AttemptSummary(
+            attempt_id=attempt.id,
+            quiz_id=attempt.quiz_history_id,
+            quiz_mode=quizzes[attempt.quiz_history_id].quiz_mode,
+            score=attempt.points_scored,
+            total_correct=attempt.correct_count,
+            total_incorrect=attempt.incorrect_count,
+            accuracy=round(attempt.correct_count / (attempt.correct_count + attempt.incorrect_count) * 100, 2)
+            if attempt.correct_count + attempt.incorrect_count
+            else 0,
+            completed_at=attempt.completed_at,
+        )
+        for attempt in attempts
+        if attempt.quiz_history_id in quizzes
+    ]
+
+
+async def _rating_points(db: DbSession, me: int, matches: list[DuelMatch]) -> list[RatingPoint]:
+    """Finished duels as rating points, in the order given."""
     if not matches:
         return []
     opponent_ids = {m.player2_id if m.player1_id == me else m.player1_id for m in matches}
@@ -230,7 +238,7 @@ async def my_rating_history(current_user: CurrentUser, db: DbSession, limit: int
     scores = {a.id: a.points_scored for a in (await db.scalars(select(UserQuizHistory).where(UserQuizHistory.id.in_(attempt_ids)))).all()} if attempt_ids else {}
 
     points: list[RatingPoint] = []
-    for m in reversed(matches):
+    for m in matches:
         is_p1 = m.player1_id == me
         opponent_id = m.player2_id if is_p1 else m.player1_id
         my_attempt, their_attempt = (m.player1_attempt_id, m.player2_attempt_id) if is_p1 else (m.player2_attempt_id, m.player1_attempt_id)
@@ -247,6 +255,85 @@ async def my_rating_history(current_user: CurrentUser, db: DbSession, limit: int
             )
         )
     return points
+
+
+def _local_date(moment: datetime, tz_offset: int) -> date:
+    # SQLite hands back naive datetimes; every stored timestamp is UTC.
+    aware = moment if moment.tzinfo else moment.replace(tzinfo=UTC)
+    return (aware.astimezone(UTC) + timedelta(minutes=tz_offset)).date()
+
+
+# Minutes east of UTC, as the browser reports it (-new Date().getTimezoneOffset()), so days are the player's own calendar days.
+TzOffset = Query(default=0, ge=-720, le=840)
+
+
+@router.get("/me/activity", response_model=list[ActivityDay])
+async def my_activity(current_user: CurrentUser, db: DbSession, days: int = Query(default=371, ge=1, le=371), tz_offset: int = TzOffset) -> list[ActivityDay]:
+    """Per-day activity for the profile heatmap: only days with something finished, oldest first.
+
+    Grouped in Python rather than SQL so the day boundary can follow the player's timezone on every dialect;
+    it is one narrow row per finished attempt, a few hundred a year for a heavy player.
+    """
+    since = datetime.now(UTC) - timedelta(days=days)
+    rows = (
+        await db.execute(
+            select(UserQuizHistory.completed_at, QuizHistory.quiz_mode, UserQuizHistory.correct_count, UserQuizHistory.incorrect_count, UserQuizHistory.points_scored)
+            .join(QuizHistory, QuizHistory.id == UserQuizHistory.quiz_history_id)
+            .where(UserQuizHistory.user_id == current_user.id, UserQuizHistory.status == "completed", UserQuizHistory.completed_at >= since)
+        )
+    ).all()
+    by_day: dict[date, ActivityDay] = {}
+    for completed_at, mode, correct, incorrect, points in rows:
+        day = _local_date(completed_at, tz_offset)
+        entry = by_day.setdefault(day, ActivityDay(date=day.isoformat(), practice=0, duels=0, questions=0, correct=0, points=0))
+        if mode == "duel":
+            entry.duels += 1
+        else:
+            entry.practice += 1
+        entry.questions += correct + incorrect
+        entry.correct += correct
+        entry.points += points
+    return [by_day[d] for d in sorted(by_day)]
+
+
+@router.get("/me/activity/day", response_model=ActivityDayDetail)
+async def my_activity_day(current_user: CurrentUser, db: DbSession, day: date = Query(alias="date"), tz_offset: int = TzOffset) -> ActivityDayDetail:
+    """Everything finished on one of the player's calendar days: rated duels and practice sessions, oldest first."""
+    start = datetime.combine(day, time.min, tzinfo=UTC) - timedelta(minutes=tz_offset)
+    end = start + timedelta(days=1)
+    me = current_user.id
+    attempts = list(
+        (
+            await db.scalars(
+                select(UserQuizHistory)
+                .join(QuizHistory, QuizHistory.id == UserQuizHistory.quiz_history_id)
+                .where(
+                    UserQuizHistory.user_id == me,
+                    UserQuizHistory.status == "completed",
+                    QuizHistory.quiz_mode != "duel",
+                    UserQuizHistory.completed_at >= start,
+                    UserQuizHistory.completed_at < end,
+                )
+                .order_by(UserQuizHistory.completed_at)
+            )
+        ).all()
+    )
+    matches = list(
+        (
+            await db.scalars(
+                select(DuelMatch)
+                .where(
+                    or_(DuelMatch.player1_id == me, DuelMatch.player2_id == me),
+                    DuelMatch.status == "completed",
+                    DuelMatch.player1_rating_after.is_not(None),
+                    DuelMatch.completed_at >= start,
+                    DuelMatch.completed_at < end,
+                )
+                .order_by(DuelMatch.completed_at)
+            )
+        ).all()
+    )
+    return ActivityDayDetail(date=day.isoformat(), practice=await _attempt_summaries(db, attempts), duels=await _rating_points(db, me, matches))
 
 
 @router.get("/me/trend", response_model=list[ProgressTrendPoint])

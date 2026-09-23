@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './activityDay';
+export * from './activityDayDetail';
 export * from './analyticsSummary';
 export * from './attemptSummary';
 export * from './authProviders';
@@ -24,6 +26,8 @@ export * from './friendRequestRead';
 export * from './friendRequestReadStatus';
 export * from './getLeaderboardParams';
 export * from './getLeaderboardScope';
+export * from './getMyActivityDayParams';
+export * from './getMyActivityParams';
 export * from './getMyHistoryParams';
 export * from './getMyProgressTrendParams';
 export * from './getMyRatingHistoryParams';
@@ -57,6 +61,7 @@ export * from './subtopic';
 export * from './subtopicWeakness';
 export * from './topic';
 export * from './topicInsight';
+export * from './tzOffsetParameter';
 export * from './user';
 export * from './userCreate';
 export * from './userLogin';

@@ -388,6 +388,51 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/RatingPoint"
+  /analytics/me/activity:
+    get:
+      operationId: getMyActivity
+      tags: [analytics]
+      summary: Per-day activity for the profile heatmap (only active days, oldest first)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 371
+            default: 371
+        - $ref: "#/components/parameters/TzOffset"
+      responses:
+        "200":
+          description: One entry per day with finished practice or duels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityDay"
+  /analytics/me/activity/day:
+    get:
+      operationId: getMyActivityDay
+      tags: [analytics]
+      summary: Rated duels and practice sessions finished on one calendar day
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - $ref: "#/components/parameters/TzOffset"
+      responses:
+        "200":
+          description: That day's sessions, oldest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityDayDetail"
   /analytics/me/trend:
     get:
       operationId: getMyProgressTrend
@@ -748,6 +793,15 @@ components:
       type: http
       scheme: bearer
   parameters:
+    TzOffset:
+      name: tz_offset
+      in: query
+      description: Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player's own calendar
+      schema:
+        type: integer
+        minimum: -720
+        maximum: 840
+        default: 0
     TopicId:
       name: topic_id
       in: path
@@ -1084,6 +1138,29 @@ components:
         correct: { type: integer }
         incorrect: { type: integer }
         accuracy: { type: number }
+    ActivityDay:
+      type: object
+      required: [date, practice, duels, questions, correct, points]
+      properties:
+        date: { type: string, format: date }
+        practice: { type: integer }
+        duels: { type: integer }
+        questions: { type: integer }
+        correct: { type: integer }
+        points: { type: integer }
+    ActivityDayDetail:
+      type: object
+      required: [date, practice, duels]
+      properties:
+        date: { type: string, format: date }
+        practice:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttemptSummary"
+        duels:
+          type: array
+          items:
+            $ref: "#/components/schemas/RatingPoint"
     RatingPoint:
       type: object
       required: [duel_id, completed_at, rating_before, rating_after, result, opponent_name, my_score, opponent_score]
