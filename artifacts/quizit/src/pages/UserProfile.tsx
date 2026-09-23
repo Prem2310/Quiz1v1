@@ -123,7 +123,7 @@ function ProfileContent({ profile, me }: { profile: PublicProfile; me: User | nu
           </Reveal>
 
           <Reveal delay={0.1}>
-            <HeadToHeadPanel opponentId={profile.user_id} opponentName={profile.name} phase="before" />
+            <HeadToHeadPanel opponentId={profile.user_id} opponentName={profile.name} phase="before" linked />
           </Reveal>
         </div>
 
