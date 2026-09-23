@@ -4,6 +4,7 @@ import { CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, Too
 import { TrendingDown, TrendingUp } from "lucide-react";
 import type { RatingPoint } from "@workspace/api-client-react";
 import { LEAGUE_BANDS } from "@/lib/leagues";
+import { Segmented } from "@/components/profile/ProfileParts";
 import { cn } from "@/lib/utils";
 
 const GRID = "hsl(var(--border))";
@@ -52,38 +53,18 @@ export function RatingGraph({ points }: { points: RatingPoint[] }) {
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        {/* The current rating already leads the page header; here the headline is how it moved. */}
         <div>
-          <p className="flex items-baseline gap-3">
-            <span className="numeric text-4xl font-bold text-foreground">{Math.round(current)}</span>
-            {shown.length > 0 ? (
-              <span className={cn("numeric flex items-center gap-1 text-base font-bold", change >= 0 ? "text-primary" : "text-secondary")}>
-                {change >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                {signed(change)}
-              </span>
-            ) : null}
+          <p className={cn("numeric flex items-center gap-1.5 text-2xl font-bold leading-none", change >= 0 ? "text-primary" : "text-secondary")}>
+            {change >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+            {signed(change)}
           </p>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            over {range === "all" ? "all" : `the last ${shown.length}`} {shown.length === 1 ? "duel" : "duels"} · peak {Math.round(peak)}
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            over {range === "all" ? "all" : `the last ${shown.length}`} {shown.length === 1 ? "duel" : "duels"} · now <span className="numeric font-semibold text-foreground">{Math.round(current)}</span> · peak{" "}
+            <span className="numeric font-semibold text-foreground">{Math.round(peak)}</span>
           </p>
         </div>
-        {ranges.length > 1 ? (
-          <div className="flex gap-1.5" role="group" aria-label="Graph range">
-            {ranges.map((r) => (
-              <button
-                key={r.key}
-                type="button"
-                aria-pressed={range === r.key}
-                onClick={() => setPicked(r.key)}
-                className={cn(
-                  "min-h-9 rounded-full border px-3.5 text-sm font-medium transition",
-                  range === r.key ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
+        {ranges.length > 1 ? <Segmented label="Graph range" options={ranges} value={range} onChange={setPicked} /> : null}
       </div>
 
       <div
@@ -125,10 +106,10 @@ export function RatingGraph({ points }: { points: RatingPoint[] }) {
         </ResponsiveContainer>
       </div>
 
-      <p className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
+      <p className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
         {(["win", "loss", "draw"] as const).map((r) => (
           <span key={r} className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: RESULT_COLOR[r] }} />
+            <span className="h-2 w-2 rounded-full" style={{ background: RESULT_COLOR[r] }} />
             {RESULT_LABEL[r]}
           </span>
         ))}
