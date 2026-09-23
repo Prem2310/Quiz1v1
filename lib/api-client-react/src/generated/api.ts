@@ -1630,7 +1630,7 @@ export function useGetMyRatingHistory<TData = Awaited<ReturnType<typeof getMyRat
 
 
 
-export const getGetMyActivityUrl = (params?: GetMyActivityParams,) => {
+export const getGetMyActivityUrl = (params: GetMyActivityParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1646,9 +1646,9 @@ export const getGetMyActivityUrl = (params?: GetMyActivityParams,) => {
 }
 
 /**
- * @summary Per-day activity for the profile heatmap (only active days, oldest first)
+ * @summary Per-day activity for the profile heatmap between two calendar days, inclusive (only active days, oldest first)
  */
-export const getMyActivity = async (params?: GetMyActivityParams, options?: Parameters<typeof customFetch>[1]): Promise<ActivityDay[]> => {
+export const getMyActivity = async (params: GetMyActivityParams, options?: Parameters<typeof customFetch>[1]): Promise<ActivityDay[]> => {
 
   return customFetch<ActivityDay[]>(getGetMyActivityUrl(params),
   {
@@ -1670,7 +1670,7 @@ export const getGetMyActivityQueryKey = (params?: GetMyActivityParams,) => {
     }
 
 
-export const getGetMyActivityQueryOptions = <TData = Awaited<ReturnType<typeof getMyActivity>>, TError = ErrorType<unknown>>(params?: GetMyActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMyActivityQueryOptions = <TData = Awaited<ReturnType<typeof getMyActivity>>, TError = ErrorType<unknown>>(params: GetMyActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1693,11 +1693,11 @@ export type GetMyActivityQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Per-day activity for the profile heatmap (only active days, oldest first)
+ * @summary Per-day activity for the profile heatmap between two calendar days, inclusive (only active days, oldest first)
  */
 
 export function useGetMyActivity<TData = Awaited<ReturnType<typeof getMyActivity>>, TError = ErrorType<unknown>>(
- params?: GetMyActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params: GetMyActivityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyActivity>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 

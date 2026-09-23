@@ -8,11 +8,11 @@
 import type { TzOffsetParameter } from './tzOffsetParameter';
 
 export type GetMyActivityParams = {
+start: Date;
 /**
- * @minimum 1
- * @maximum 371
+ * At most 370 days after start
  */
-days?: number;
+end: Date;
 /**
  * Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player's own calendar
  * @minimum -720

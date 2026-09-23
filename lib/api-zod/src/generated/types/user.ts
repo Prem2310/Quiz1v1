@@ -27,4 +27,5 @@ export interface User {
   total_xp: number;
   best_rating: number;
   league: string;
+  date_joined: Date;
 }

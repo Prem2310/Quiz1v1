@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import Integer, desc, func, or_, select
 
 from app.core.adaptive import get_catalog, load_profiles
@@ -263,23 +263,34 @@ def _local_date(moment: datetime, tz_offset: int) -> date:
     return (aware.astimezone(UTC) + timedelta(minutes=tz_offset)).date()
 
 
+def _day_start(day: date, tz_offset: int) -> datetime:
+    """The UTC instant a player's calendar day begins."""
+    return datetime.combine(day, time.min, tzinfo=UTC) - timedelta(minutes=tz_offset)
+
+
 # Minutes east of UTC, as the browser reports it (-new Date().getTimezoneOffset()), so days are the player's own calendar days.
 TzOffset = Query(default=0, ge=-720, le=840)
 
 
 @router.get("/me/activity", response_model=list[ActivityDay])
-async def my_activity(current_user: CurrentUser, db: DbSession, days: int = Query(default=371, ge=1, le=371), tz_offset: int = TzOffset) -> list[ActivityDay]:
-    """Per-day activity for the profile heatmap: only days with something finished, oldest first.
+async def my_activity(current_user: CurrentUser, db: DbSession, start: date, end: date, tz_offset: int = TzOffset) -> list[ActivityDay]:
+    """Per-day activity for the profile heatmap between two calendar days (inclusive): only active days, oldest first.
 
     Grouped in Python rather than SQL so the day boundary can follow the player's timezone on every dialect;
     it is one narrow row per finished attempt, a few hundred a year for a heavy player.
     """
-    since = datetime.now(UTC) - timedelta(days=days)
+    if end < start or (end - start).days > 370:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Pick a range of at most one year, start before end")
     rows = (
         await db.execute(
             select(UserQuizHistory.completed_at, QuizHistory.quiz_mode, UserQuizHistory.correct_count, UserQuizHistory.incorrect_count, UserQuizHistory.points_scored)
             .join(QuizHistory, QuizHistory.id == UserQuizHistory.quiz_history_id)
-            .where(UserQuizHistory.user_id == current_user.id, UserQuizHistory.status == "completed", UserQuizHistory.completed_at >= since)
+            .where(
+                UserQuizHistory.user_id == current_user.id,
+                UserQuizHistory.status == "completed",
+                UserQuizHistory.completed_at >= _day_start(start, tz_offset),
+                UserQuizHistory.completed_at < _day_start(end + timedelta(days=1), tz_offset),
+            )
         )
     ).all()
     by_day: dict[date, ActivityDay] = {}
@@ -299,7 +310,7 @@ async def my_activity(current_user: CurrentUser, db: DbSession, days: int = Quer
 @router.get("/me/activity/day", response_model=ActivityDayDetail)
 async def my_activity_day(current_user: CurrentUser, db: DbSession, day: date = Query(alias="date"), tz_offset: int = TzOffset) -> ActivityDayDetail:
     """Everything finished on one of the player's calendar days: rated duels and practice sessions, oldest first."""
-    start = datetime.combine(day, time.min, tzinfo=UTC) - timedelta(minutes=tz_offset)
+    start = _day_start(day, tz_offset)
     end = start + timedelta(days=1)
     me = current_user.id
     attempts = list(

@@ -66,6 +66,7 @@ class UserRead(BaseModel):
     total_xp: int
     best_rating: float
     league: str
+    date_joined: datetime
 
 
 class AuthResponse(BaseModel):

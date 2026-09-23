@@ -392,17 +392,19 @@ paths:
     get:
       operationId: getMyActivity
       tags: [analytics]
-      summary: Per-day activity for the profile heatmap (only active days, oldest first)
+      summary: Per-day activity for the profile heatmap between two calendar days, inclusive (only active days, oldest first)
       security:
         - bearerAuth: []
       parameters:
-        - name: days
+        - name: start
           in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 371
-            default: 371
+          required: true
+          schema: { type: string, format: date }
+        - name: end
+          in: query
+          required: true
+          description: At most 370 days after start
+          schema: { type: string, format: date }
         - $ref: "#/components/parameters/TzOffset"
       responses:
         "200":
@@ -888,7 +890,7 @@ components:
       required:
         [
           id, name, email, username, total_points, total_correct, total_incorrect,
-          user_rating, matches_played, current_streak, max_streak, total_xp, best_rating, league,
+          user_rating, matches_played, current_streak, max_streak, total_xp, best_rating, league, date_joined,
         ]
       properties:
         id: { type: integer }
@@ -908,6 +910,7 @@ components:
         total_xp: { type: integer }
         best_rating: { type: number }
         league: { type: string }
+        date_joined: { type: string, format: date-time }
     UserCreate:
       type: object
       required: [name, email, username, password]

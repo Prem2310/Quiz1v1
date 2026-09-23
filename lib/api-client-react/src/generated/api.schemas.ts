@@ -54,6 +54,7 @@ export interface User {
   total_xp: number;
   best_rating: number;
   league: string;
+  date_joined: string;
 }
 
 export interface UserCreate {
@@ -643,11 +644,11 @@ limit?: number;
 };
 
 export type GetMyActivityParams = {
+start: string;
 /**
- * @minimum 1
- * @maximum 371
+ * At most 370 days after start
  */
-days?: number;
+end: string;
 /**
  * Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player's own calendar
  * @minimum -720

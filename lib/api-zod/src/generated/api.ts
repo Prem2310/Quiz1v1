@@ -60,7 +60,8 @@ export const RegisterResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 })
 
@@ -93,7 +94,8 @@ export const LoginResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 })
 
@@ -132,7 +134,8 @@ export const GetCurrentUserResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 
 
@@ -175,7 +178,8 @@ export const UpdateCurrentUserResponse = zod.object({
   "max_streak": zod.int(),
   "total_xp": zod.int(),
   "best_rating": zod.number(),
-  "league": zod.string()
+  "league": zod.string(),
+  "date_joined": zod.coerce.date()
 })
 
 
@@ -501,11 +505,8 @@ export const GetMyRatingHistoryResponse = zod.array(GetMyRatingHistoryResponseIt
 
 
 /**
- * @summary Per-day activity for the profile heatmap (only active days, oldest first)
+ * @summary Per-day activity for the profile heatmap between two calendar days, inclusive (only active days, oldest first)
  */
-export const getMyActivityQueryDaysDefault = 371;
-export const getMyActivityQueryDaysMax = 371;
-
 export const getMyActivityQueryTzOffsetDefault = 0;
 export const getMyActivityQueryTzOffsetMin = -720;
 export const getMyActivityQueryTzOffsetMax = 840;
@@ -513,7 +514,8 @@ export const getMyActivityQueryTzOffsetMax = 840;
 
 
 export const GetMyActivityQueryParams = zod.object({
-  "days": zod.coerce.number().int().min(1).max(getMyActivityQueryDaysMax).default(getMyActivityQueryDaysDefault),
+  "start": zod.date(),
+  "end": zod.date().describe('At most 370 days after start'),
   "tz_offset": zod.coerce.number().int().min(getMyActivityQueryTzOffsetMin).max(getMyActivityQueryTzOffsetMax).default(getMyActivityQueryTzOffsetDefault).describe('Minutes east of UTC (-new Date().getTimezoneOffset()), so days follow the player\'s own calendar')
 })
 

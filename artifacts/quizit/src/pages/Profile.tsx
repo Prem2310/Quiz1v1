@@ -76,10 +76,6 @@ export default function Profile() {
       </StaggerGroup>
 
       <Reveal delay={0.05} className="surface-panel p-4 sm:p-5">
-        <ActivityHeatmap />
-      </Reveal>
-
-      <Reveal delay={0.05} className="surface-panel p-4 sm:p-5">
         <SectionTitle>Rating history</SectionTitle>
         {ratingQuery.isError ? (
           <ErrorState message="Could not load your rating history." onRetry={() => void ratingQuery.refetch()} />
@@ -98,6 +94,10 @@ export default function Profile() {
         ) : (
           <RatingGraph points={duels} />
         )}
+      </Reveal>
+
+      <Reveal delay={0.05} className="surface-panel p-4 sm:p-5">
+        <ActivityHeatmap />
       </Reveal>
 
       <Reveal className="lg:hidden">
