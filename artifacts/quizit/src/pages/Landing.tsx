@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { AUTHOR_NAME, AUTHOR_URL, CONTRIBUTING_URL, ISSUES_URL, REPO_URL } from "@/content/project";
+import { SocialCards } from "@/components/common/SocialLinks";
 import { TOPICS } from "@/content/topics";
 import { useAuth } from "@/stores/auth";
 import { MIN_ONLINE_SHOWN, MIN_PLAYERS_SHOWN, usePublicStats } from "@/hooks/usePublicStats";
@@ -282,6 +283,16 @@ export default function Landing() {
               </Button>
             </div>
           </div>
+        </section>
+
+        <section aria-labelledby="follow-heading" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+            <h2 id="follow-heading" className="font-display text-2xl uppercase tracking-wide text-foreground sm:text-3xl">
+              Follow quiz1v1
+            </h2>
+            <p className="max-w-sm text-sm text-muted-foreground">Find us on Instagram and LinkedIn, or star the code on GitHub.</p>
+          </div>
+          <SocialCards />
         </section>
 
         <section className="px-4 pb-24 sm:px-6">

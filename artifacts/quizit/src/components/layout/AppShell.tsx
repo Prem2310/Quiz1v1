@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
   BarChart3,
   Flame,
+  Info,
   LayoutGrid,
   LogOut,
   Settings,
@@ -127,13 +128,16 @@ export function AppShell({ children, bare = false }: { children: ReactNode; bare
               <LogOut className="h-4 w-4" />
             </button>
           </div>
-          <Credit className="px-2 pb-1 pt-2 text-[11px] leading-snug text-muted-foreground" />
-          <div className="flex items-center justify-between gap-2 px-2 pt-2">
-            <Link href="/about" className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground">
-              About quiz1v1
+          <div className="mt-2 flex items-center justify-between gap-2 border-t border-border px-1 pt-2">
+            <Link
+              href="/about"
+              className="flex h-7 items-center gap-1.5 rounded-[var(--radius)] px-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
+            >
+              <Info className="h-3.5 w-3.5" /> About
             </Link>
-            <SocialLinks size="sm" />
+            <SocialLinks variant="ghost" />
           </div>
+          <Credit className="px-2.5 pt-1.5 text-[11px] leading-snug text-muted-foreground" />
         </div>
       </aside>
 
