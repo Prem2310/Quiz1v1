@@ -528,7 +528,7 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
 
     await websocket.accept()
     if match.status == "aborted":
-        # Accept first: a close before accept looks like a failed handshake to the browser, which then retries.
+        # Accept first so the client gets opponent_left (and stops); a close before accept is just a failed handshake to it.
         await _close_quietly(websocket, {"type": "opponent_left"})
         return
 

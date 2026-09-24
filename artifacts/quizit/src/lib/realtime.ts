@@ -54,6 +54,8 @@ export function createDuelService(duelId: number | string, handlers: DuelHandler
     onError: handlers.onError,
     onMessage: (data) => {
       if (data && typeof data === "object" && "type" in data) {
+        // Terminal: the server closes right after; don't let that close trigger reconnects.
+        if ((data as DuelServerMessage).type === "opponent_left") manager.disconnect();
         handlers.onMessage(data as DuelServerMessage);
       }
     },
