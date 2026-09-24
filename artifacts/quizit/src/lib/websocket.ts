@@ -1,5 +1,8 @@
 import type { ConnectionState } from "@/types";
 
+/** Server close code: this user connected again elsewhere and that newer socket replaced this one. */
+const REPLACED_CLOSE_CODE = 4000;
+
 export interface SocketManagerOptions {
   url: string;
   /** Heartbeat payload sent on an interval; omit to disable heartbeats. */
@@ -68,11 +71,17 @@ export class SocketManager {
     // No onError here: every error is followed by a close, which retries. Reporting the first blip made pages
     // give up on connections the retry would have recovered. onError fires only once retries are exhausted.
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       this.stopHeartbeat();
       this.socket = null;
       if (this.manuallyClosed) {
         this.setState("CLOSED");
+        return;
+      }
+      if (event.code === REPLACED_CLOSE_CODE) {
+        // A newer socket (another tab) took over; reconnecting would just kick that one out in turn.
+        this.setState("ERROR");
+        this.options.onError?.("Opened in another tab.");
         return;
       }
       this.scheduleReconnect();

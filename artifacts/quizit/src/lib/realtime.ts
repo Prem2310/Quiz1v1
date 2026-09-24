@@ -64,6 +64,10 @@ export function createDuelService(duelId: number | string, handlers: DuelHandler
   return {
     connect: () => manager.connect(),
     submitAnswer: (index: number, answer: string) => manager.send({ type: "answer", index, answer }),
-    disconnect: () => manager.disconnect(),
+    /** Leaving on purpose: say so, so the server ends the duel now instead of waiting out the reconnect grace. */
+    disconnect: () => {
+      manager.send({ type: "leave" });
+      manager.disconnect();
+    },
   };
 }
