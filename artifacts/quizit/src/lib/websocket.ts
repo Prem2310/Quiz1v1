@@ -65,9 +65,8 @@ export class SocketManager {
       this.options.onMessage?.(parsed, event);
     };
 
-    socket.onerror = () => {
-      this.options.onError?.("Realtime connection error.");
-    };
+    // No onError here: every error is followed by a close, which retries. Reporting the first blip made pages
+    // give up on connections the retry would have recovered. onError fires only once retries are exhausted.
 
     socket.onclose = () => {
       this.stopHeartbeat();

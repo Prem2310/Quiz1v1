@@ -17,9 +17,14 @@ export function createMatchmakingService(handlers: MatchmakingHandlers, topicId?
     onError: handlers.onError,
     onMessage: (data) => {
       if (!data || typeof data !== "object") return;
-      const payload = data as { type?: string; duel_id?: number; opponent?: MatchFoundPayload["opponent"] };
+      const payload = data as { type?: string; duel_id?: number; opponent?: MatchFoundPayload["opponent"]; detail?: string };
       if (payload.type === "match_found" && typeof payload.duel_id === "number") {
+        // The queue's job is done: close it ourselves so the server's close isn't taken for a drop and reconnected (re-queueing us).
+        manager.disconnect();
         handlers.onMatchFound({ duelId: payload.duel_id, opponent: payload.opponent ?? null });
+      } else if (payload.type === "error") {
+        manager.disconnect();
+        handlers.onError(payload.detail ?? "Couldn't start the duel. Please try again.");
       }
     },
   });

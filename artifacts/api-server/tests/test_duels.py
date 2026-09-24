@@ -198,3 +198,31 @@ async def test_review_and_summary_explain_points_and_xp(client):
     summary = (await client.get(f"/api/duels/{match.id}", headers=b["headers"])).json()
     assert (summary["player1_correct"], summary["player2_correct"]) == (10, 0)
     assert (summary["player1_xp"], summary["player2_xp"]) == (duel_xp(10, "win"), duel_xp(0, "loss"))
+
+
+async def test_failed_duel_creation_tells_both_queued_players(client, monkeypatch):
+    from app.routers import duels
+
+    class RecordingSocket:
+        def __init__(self):
+            self.sent, self.closed = [], None
+
+        async def send_json(self, message):
+            self.sent.append(message)
+
+        async def close(self, code=1000):
+            self.closed = code
+
+    async def boom(*_, **__):
+        raise ConnectionError("remote DB hiccup")
+
+    monkeypatch.setattr(duels, "_create_duel", boom)
+    a, b = await new_user(client), await new_user(client)
+    entries = [duels.QueueEntry(user_id=u["id"], username="u", name="u", rating=1000, topic_id=None, websocket=RecordingSocket()) for u in (a, b)]
+    for e in entries:
+        duels._queue[e.user_id] = e
+    assert await duels._attempt_match(entries[0]) is None
+    for e in entries:
+        assert e.matched_duel_id == -1 and e.websocket.closed == 1011  # both loops end; nobody searches forever
+        assert e.websocket.sent[-1]["type"] == "error"
+        assert e.user_id not in duels._queue

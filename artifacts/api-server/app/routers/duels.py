@@ -11,6 +11,7 @@ should work even after the sockets have closed).
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -28,6 +29,7 @@ from app.models import DuelChallenge, DuelMatch, Question, QuizHistory, QuizQues
 from app.schemas import DuelChallengeCreate, DuelChallengeRead, DuelOpponent, DuelPlayerAnswer, DuelQuestionReview, DuelSummary, HeadToHead, HeadToHeadResult
 
 router = APIRouter(tags=["duels"])
+logger = logging.getLogger(__name__)
 
 DUEL_TIME_PER_QUESTION = 15
 DUEL_NUM_QUESTIONS = 10
@@ -44,6 +46,17 @@ ELO_REMATCH_WINDOW = timedelta(hours=24)
 async def _authenticate_ws(websocket: WebSocket) -> int | None:
     token = websocket.cookies.get("access_token") or websocket.query_params.get("token")
     return decode_access_token(token) if token else None
+
+
+async def _close_quietly(websocket: WebSocket, message: dict[str, Any] | None = None, code: int = 1000) -> None:
+    """Send a last message and a proper close frame. Returning from a handler without one reaches the browser
+    as an abnormal 1006 close, which the client treats as a dropped connection and reconnects."""
+    try:
+        if message is not None:
+            await websocket.send_json(message)
+        await websocket.close(code=code)
+    except Exception:
+        pass  # the client is already gone
 
 
 # --------------------------------------------------------------------------
@@ -138,8 +151,18 @@ async def _attempt_match(entry: QueueEntry) -> DuelMatch | None:
         del _queue[best.user_id]
 
     topic_id = entry.topic_id or best.topic_id
-    async with SessionLocal() as db:
-        match = await _create_duel(db, entry.user_id, entry.rating, best.user_id, best.rating, topic_id)
+    try:
+        async with SessionLocal() as db:
+            match = await _create_duel(db, entry.user_id, entry.rating, best.user_id, best.rating, topic_id)
+    except Exception as exc:
+        # Both players are already out of the queue: tell both, or the partner "searches" forever.
+        logger.warning("Could not create duel for %s vs %s", entry.user_id, best.user_id, exc_info=True)
+        detail = exc.detail if isinstance(exc, HTTPException) else "Couldn't start the duel. Please try again."
+        for who in (entry, best):
+            who.matched_duel_id = -1  # ends that player's matchmaking loop
+            who.notified = True
+            await _close_quietly(who.websocket, {"type": "error", "detail": detail}, code=1011)
+        return None
 
     entry.matched_duel_id = match.id
     best.matched_duel_id = match.id
@@ -198,20 +221,15 @@ async def matchmaking_socket(websocket: WebSocket, topic_id: int | None = Query(
                 pass
             if entry.matched_duel_id is None:
                 await _attempt_match(entry)
-            elif not entry.notified:
-                # We were matched by the other side; make sure we still tell this socket.
-                try:
-                    await websocket.send_json({"type": "match_found", "duel_id": entry.matched_duel_id, "opponent": entry.opponent.model_dump() if entry.opponent else None})
-                except Exception:
-                    pass
-                return
-            else:
-                return
-    except WebSocketDisconnect:
-        pass
+        if not entry.notified:
+            # We were matched by the other side but its send to us failed; try once more ourselves.
+            await websocket.send_json({"type": "match_found", "duel_id": entry.matched_duel_id, "opponent": entry.opponent.model_dump() if entry.opponent else None})
+    except (WebSocketDisconnect, RuntimeError):
+        pass  # RuntimeError: the socket was closed from the partner's task (duel creation failed)
     finally:
         async with _queue_lock:
             _queue.pop(user.id, None)
+        await _close_quietly(websocket)
 
 
 # --------------------------------------------------------------------------
@@ -492,43 +510,53 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
         if match.status == "completed":
             await websocket.close(code=1000, reason="Duel already finished")
             return
-        question_ids = list(
-            (
-                await db.scalars(
-                    select(QuizQuestion.question_id)
-                    .where(QuizQuestion.quiz_history_id == match.quiz_history_id)
-                    .order_by(QuizQuestion.question_order)
-                )
-            ).all()
-        )
-        questions_by_id = {q.id: q for q in (await db.scalars(select(Question).where(Question.id.in_(question_ids)))).all()}
-        questions = [questions_by_id[qid] for qid in question_ids if qid in questions_by_id]
-        quiz = await db.get(QuizHistory, match.quiz_history_id)
+        questions: list[Question] = []
+        time_per_question = DUEL_TIME_PER_QUESTION
+        # The second player joins a session that already holds the questions: skip reloading them (remote DB round trips).
+        if match.status != "aborted" and duel_id not in _active_duels:
+            questions = list(
+                (
+                    await db.scalars(
+                        select(Question)
+                        .join(QuizQuestion, QuizQuestion.question_id == Question.id)
+                        .where(QuizQuestion.quiz_history_id == match.quiz_history_id)
+                        .order_by(QuizQuestion.question_order)
+                    )
+                ).all()
+            )
+            time_per_question = await db.scalar(select(QuizHistory.time_per_question).where(QuizHistory.id == match.quiz_history_id)) or DUEL_TIME_PER_QUESTION
 
     await websocket.accept()
+    if match.status == "aborted":
+        # Accept first: a close before accept looks like a failed handshake to the browser, which then retries.
+        await _close_quietly(websocket, {"type": "opponent_left"})
+        return
 
     async with _active_duels_lock:
         session = _active_duels.get(duel_id)
-        if session is None:
+        if session is None and questions:
             session = DuelSession(
                 duel_id=duel_id,
                 quiz_history_id=match.quiz_history_id,
                 topic_id=match.topic_id,
                 questions=questions,
-                time_per_question=(quiz.time_per_question if quiz else None) or DUEL_TIME_PER_QUESTION,
+                time_per_question=time_per_question,
             )
             _active_duels[duel_id] = session
-        session.add_player(user_id, websocket)
-        should_start = len(session.players) == 2 and not session.started
-
-    await websocket.send_json({"type": "waiting_for_opponent"} if len(session.players) < 2 else {"type": "opponent_joined"})
+        if session is not None:
+            session.add_player(user_id, websocket)
+            should_start = len(session.players) == 2 and not session.started
+    if session is None:
+        # The session ended (finished or aborted, then dropped) between our check and here; or there are no questions.
+        await _close_quietly(websocket, {"type": "opponent_left"})
+        return
 
     game_task: asyncio.Task | None = None
-    if should_start:
-        game_task = asyncio.create_task(session.run())
-        session.task = game_task
-
     try:
+        await websocket.send_json({"type": "waiting_for_opponent"} if len(session.players) < 2 else {"type": "opponent_joined"})
+        if should_start:
+            game_task = asyncio.create_task(session.run())
+            session.task = game_task
         while True:
             message = await websocket.receive_json()
             if not isinstance(message, dict):
