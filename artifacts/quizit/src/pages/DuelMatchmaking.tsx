@@ -28,7 +28,15 @@ export default function DuelMatchmaking() {
 
   const [elapsed, setElapsed] = useState(0);
 
-  useEffect(() => () => serviceRef.current?.dispose(), []);
+  const navigateTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      serviceRef.current?.dispose();
+      if (navigateTimerRef.current) window.clearTimeout(navigateTimerRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (phase !== "searching") return;
@@ -46,7 +54,7 @@ export default function DuelMatchmaking() {
         onMatchFound: (payload) => {
           setMatch(payload);
           setPhase("matched");
-          window.setTimeout(() => navigate(`/duel/${payload.duelId}`), 1500);
+          navigateTimerRef.current = window.setTimeout(() => navigate(`/duel/${payload.duelId}`), 1000);
         },
         onError: (message) => {
           setError(message);

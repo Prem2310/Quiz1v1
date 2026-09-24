@@ -17,9 +17,14 @@ export function createMatchmakingService(handlers: MatchmakingHandlers, topicId?
     onError: handlers.onError,
     onMessage: (data) => {
       if (!data || typeof data !== "object") return;
-      const payload = data as { type?: string; duel_id?: number; opponent?: MatchFoundPayload["opponent"] };
+      const payload = data as { type?: string; duel_id?: number; opponent?: MatchFoundPayload["opponent"]; detail?: string };
       if (payload.type === "match_found" && typeof payload.duel_id === "number") {
+        // The queue's job is done: close it ourselves so the server's close isn't taken for a drop and reconnected (re-queueing us).
+        manager.disconnect();
         handlers.onMatchFound({ duelId: payload.duel_id, opponent: payload.opponent ?? null });
+      } else if (payload.type === "error") {
+        manager.disconnect();
+        handlers.onError(payload.detail ?? "Couldn't start the duel. Please try again.");
       }
     },
   });
@@ -49,6 +54,8 @@ export function createDuelService(duelId: number | string, handlers: DuelHandler
     onError: handlers.onError,
     onMessage: (data) => {
       if (data && typeof data === "object" && "type" in data) {
+        // Terminal: the server closes right after; don't let that close trigger reconnects.
+        if ((data as DuelServerMessage).type === "opponent_left") manager.disconnect();
         handlers.onMessage(data as DuelServerMessage);
       }
     },
@@ -57,6 +64,10 @@ export function createDuelService(duelId: number | string, handlers: DuelHandler
   return {
     connect: () => manager.connect(),
     submitAnswer: (index: number, answer: string) => manager.send({ type: "answer", index, answer }),
-    disconnect: () => manager.disconnect(),
+    /** Leaving on purpose: say so, so the server ends the duel now instead of waiting out the reconnect grace. */
+    disconnect: () => {
+      manager.send({ type: "leave" });
+      manager.disconnect();
+    },
   };
 }
