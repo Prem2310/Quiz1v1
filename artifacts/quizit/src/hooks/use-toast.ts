@@ -2,7 +2,9 @@ import * as React from 'react';
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 1000; // after closing: long enough for the exit animation
+const TOAST_DURATION = 5000;
+const TOAST_DURATION_DESTRUCTIVE = 8000; // errors get a little longer to read
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -144,18 +146,24 @@ function toast({ ...props }: Toast) {
       toast: { ...props, id },
     });
   const dismiss = () => dispatch({ type: 'DISMISS_TOAST', toastId: id });
+  const duration = props.duration ?? (props.variant === 'destructive' ? TOAST_DURATION_DESTRUCTIVE : TOAST_DURATION);
 
   dispatch({
     type: 'ADD_TOAST',
     toast: {
       ...props,
       id,
+      duration,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss();
       },
     },
   });
+
+  // Our own close timer. Radix's is unreliable: its "paused" flag is shared by the whole viewport and can get
+  // stuck on (e.g. closing a toast with X while hovering it), after which no later toast ever auto-closes.
+  if (duration !== Infinity) setTimeout(dismiss, duration);
 
   return {
     id: id,

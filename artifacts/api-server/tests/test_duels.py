@@ -226,3 +226,26 @@ async def test_failed_duel_creation_tells_both_queued_players(client, monkeypatc
         assert e.matched_duel_id == -1 and e.websocket.closed == 1011  # both loops end; nobody searches forever
         assert e.websocket.sent[-1]["type"] == "error"
         assert e.user_id not in duels._queue
+
+
+async def test_matchmaking_prefers_someone_new_but_never_waits_for_them(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.routers import duels
+
+    async def fake_create(_db, p1, _r1, p2, _r2, _topic):
+        return SimpleNamespace(id=p1 * 1000 + p2)
+
+    monkeypatch.setattr(duels, "_create_duel", fake_create)
+
+    def entry(uid, recent=()):
+        e = duels.QueueEntry(user_id=uid, username="u", name="u", rating=1000, topic_id=None, websocket=FakeSocket(), recent_opponents=set(recent))
+        duels._queue[uid] = e
+        return e
+
+    me, rematch, fresh = entry(9001, recent={9002}), entry(9002), entry(9003)
+    assert (await duels._attempt_match(me)).id == 9001 * 1000 + 9003  # someone new is queued: take them
+    duels._queue.pop(rematch.user_id)
+
+    me, rematch = entry(9001, recent={9002}), entry(9002)
+    assert (await duels._attempt_match(me)).id == 9001 * 1000 + 9002  # only the recent opponent: match now, no 20 s wait

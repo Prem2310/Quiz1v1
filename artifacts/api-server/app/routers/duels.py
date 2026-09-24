@@ -38,7 +38,6 @@ QUEUE_MIN_TOLERANCE = 75
 QUEUE_MAX_TOLERANCE = 400
 QUEUE_WIDEN_PER_SECOND = 20
 CHALLENGE_EXPIRY_SECONDS = 90
-REMATCH_AVOID_SECONDS = 20  # prefer someone new for this long before matching the same opponent again
 REMATCH_WINDOW = timedelta(minutes=30)
 ELO_REMATCH_WINDOW = timedelta(hours=24)
 
@@ -118,8 +117,7 @@ async def _create_duel(
         player2_rating_before=player2_rating,
     )
     db.add(match)
-    await db.commit()
-    await db.refresh(match)
+    await db.commit()  # no refresh: expire_on_commit=False keeps the attributes, and a refresh is one more round trip
     return match
 
 
@@ -131,22 +129,18 @@ async def _attempt_match(entry: QueueEntry) -> DuelMatch | None:
             return None
         elapsed = time.monotonic() - entry.queued_at
         tolerance = min(QUEUE_MAX_TOLERANCE, QUEUE_MIN_TOLERANCE + elapsed * QUEUE_WIDEN_PER_SECOND)
-        best: QueueEntry | None = None
-        best_gap = None
-        for candidate in _queue.values():
-            if candidate.user_id == entry.user_id:
-                continue
-            if entry.topic_id is not None and candidate.topic_id is not None and entry.topic_id != candidate.topic_id:
-                continue
-            if elapsed < REMATCH_AVOID_SECONDS and (candidate.user_id in entry.recent_opponents or entry.user_id in candidate.recent_opponents):
-                continue
-            gap = abs(candidate.rating - entry.rating)
-            if gap > tolerance:
-                continue
-            if best is None or gap < best_gap:
-                best, best_gap = candidate, gap
-        if best is None:
+        # Prefer someone new, then the closest rating, but never wait for someone new who isn't queued:
+        # holding back a recent opponent used to cost up to 20 s whenever the two were the only ones online.
+        candidates = [
+            c
+            for c in _queue.values()
+            if c.user_id != entry.user_id
+            and (entry.topic_id is None or c.topic_id is None or entry.topic_id == c.topic_id)
+            and abs(c.rating - entry.rating) <= tolerance
+        ]
+        if not candidates:
             return None
+        best = min(candidates, key=lambda c: (c.user_id in entry.recent_opponents or entry.user_id in c.recent_opponents, abs(c.rating - entry.rating)))
         del _queue[entry.user_id]
         del _queue[best.user_id]
 
@@ -198,9 +192,15 @@ async def matchmaking_socket(websocket: WebSocket, topic_id: int | None = Query(
         await websocket.close(code=1008, reason="Authentication required")
         return
 
-    async with SessionLocal() as db:
-        user = await db.get(UserData, user_id)
-        recent_opponents = await _recent_opponents(db, user_id) if user else set()
+    async def load_user():
+        async with SessionLocal() as db:
+            return await db.get(UserData, user_id)
+
+    async def load_recent():
+        async with SessionLocal() as db:
+            return await _recent_opponents(db, user_id)
+
+    user, recent_opponents = await asyncio.gather(load_user(), load_recent())  # independent: one round trip, not two
     if user is None:
         await websocket.close(code=1008, reason="Unknown user")
         return
@@ -212,6 +212,7 @@ async def matchmaking_socket(websocket: WebSocket, topic_id: int | None = Query(
     await websocket.send_json({"type": "queued"})
 
     try:
+        await _attempt_match(entry)  # someone may already be waiting: don't sit out the first 1 s tick
         while entry.matched_duel_id is None:
             try:
                 message = await asyncio.wait_for(websocket.receive_json(), timeout=1.0)
@@ -503,7 +504,9 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
         return
 
     async with SessionLocal() as db:
-        match = await db.get(DuelMatch, duel_id)
+        row = (await db.execute(select(DuelMatch, QuizHistory.time_per_question).outerjoin(QuizHistory, QuizHistory.id == DuelMatch.quiz_history_id).where(DuelMatch.id == duel_id))).first()
+        match, time_per_question = row if row else (None, None)
+        time_per_question = time_per_question or DUEL_TIME_PER_QUESTION
         if match is None or user_id not in (match.player1_id, match.player2_id):
             await websocket.close(code=1008, reason="Duel not found")
             return
@@ -511,7 +514,6 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
             await websocket.close(code=1000, reason="Duel already finished")
             return
         questions: list[Question] = []
-        time_per_question = DUEL_TIME_PER_QUESTION
         # The second player joins a session that already holds the questions: skip reloading them (remote DB round trips).
         if match.status != "aborted" and duel_id not in _active_duels:
             questions = list(
@@ -524,7 +526,6 @@ async def duel_socket(websocket: WebSocket, duel_id: int) -> None:
                     )
                 ).all()
             )
-            time_per_question = await db.scalar(select(QuizHistory.time_per_question).where(QuizHistory.id == match.quiz_history_id)) or DUEL_TIME_PER_QUESTION
 
     await websocket.accept()
     if match.status == "aborted":

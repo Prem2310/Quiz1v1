@@ -54,7 +54,7 @@ export default function DuelMatchmaking() {
         onMatchFound: (payload) => {
           setMatch(payload);
           setPhase("matched");
-          navigateTimerRef.current = window.setTimeout(() => navigate(`/duel/${payload.duelId}`), 1500);
+          navigateTimerRef.current = window.setTimeout(() => navigate(`/duel/${payload.duelId}`), 1000);
         },
         onError: (message) => {
           setError(message);
